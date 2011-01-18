@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- This file was written by IceGrid Admin -->
+<icegrid>
+   <application name="IceHashApplication">
+      <service-template id="IceHashServiceTemplate">
+         <parameter name="name"/>
+         <service name="${name}" entry="IceHashServer.dll:IceHashServer.IceHashServer">
+            <properties>
+            </properties>
+            <adapter name="${service}" endpoints="tcp" id="${server}.${service}" replica-group="IceHashGroup"/>
+         </service>
+      </service-template>
+      <server-template id="IceHashServerTemplate">
+         <parameter name="index"/>
+         <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="/home/kolczak/Dokumenty/studia/icehash/IceHash/IceHashServer/bin/Debug">
+	  <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
+         </icebox>
+      </server-template>
+      <replica-group id="IceHashGroup">
+         <load-balancing type="round-robin" n-replicas="0"/>
+         <object identity="IceHash" type="::HashModule::Hash"/>
+      </replica-group>
+      <node name="Node1">
+         <server-instance template="IceHashServerTemplate" index="1"/>
+      </node>
+      <node name="Node2">
+         <server-instance template="IceHashServerTemplate" index="2"/>
+      </node>
+      <node name="Node3">
+         <server-instance template="IceHashServerTemplate" index="3"/>
+      </node>
+   </application>
+</icegrid>
