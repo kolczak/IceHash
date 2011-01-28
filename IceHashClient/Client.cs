@@ -35,13 +35,13 @@ namespace IceHashClient
             return 0;
                 
         }
-        
+        /*
         public static void Main(string[] args)
         {
             Client cln = new Client ();
             Environment.Exit(cln.main (args));
         }
-
+         */
     }
 }
 
