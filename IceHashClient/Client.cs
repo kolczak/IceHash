@@ -8,19 +8,23 @@ namespace IceHashClient
         public override int run(string[] args)
         {
             Console.WriteLine("1");
-            Ice.ObjectPrx obj = communicator ().stringToProxy (@"HashServer");
+            Ice.ObjectPrx obj = communicator ().stringToProxy (
+                                @"IIceHashService"
+                                                              );
+            if (obj == null)
+                Console.WriteLine("obj jest nullem!");
             Console.WriteLine("2");
             //(@"SimplePrinter@SimplePrinterAdapter");
             HashPrx hashModule = HashPrxHelper.checkedCast(obj);
             Console.WriteLine("3");
             if(hashModule == null)
                 throw new ApplicationException("Invalid proxy");
-            /*
+            
             if(hashModule.SrvPing() == 1)
                 Console.WriteLine("Server is Alive!");
             else
                 Console.WriteLine("Server is Ded!");
-            */
+            
             /*
             PrinterPrx printer = PrinterPrxHelper.checkedCast(obj);
             if (printer == null)

@@ -8,6 +8,7 @@
     <ProjectGuid>{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AssemblyName>IceHashClient</AssemblyName>
+    <RootNamespace>IceHashClient</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,4 +27,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="Client.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Ice, Version=3.3.1.0, Culture=neutral, PublicKeyToken=1f998c50fec78381">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\usr\lib\cli\libzeroc-ice3.3\Ice.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IceHashCommon\IceHashCommon.csproj">
+      <Project>{931C79B5-DE33-4964-BE22-8BAB14405F35}</Project>
+      <Name>IceHashCommon</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

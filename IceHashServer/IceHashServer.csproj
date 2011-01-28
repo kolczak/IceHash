@@ -6,8 +6,9 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{A6820E9F-2F03-4C9A-9028-747E3F9604D9}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AssemblyName>IceHashServer</AssemblyName>
+    <RootNamespace>IceHashServer</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,4 +27,24 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="HashModuleImpl.cs" />
+    <Compile Include="IceHashServer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IceHashCommon\IceHashCommon.csproj">
+      <Project>{931C79B5-DE33-4964-BE22-8BAB14405F35}</Project>
+      <Name>IceHashCommon</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Ice, Version=3.3.1.0, Culture=neutral, PublicKeyToken=1f998c50fec78381">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\usr\lib\cli\libzeroc-ice3.3\Ice.dll</HintPath>
+    </Reference>
+    <Reference Include="IceBox, Version=3.3.1.0, Culture=neutral, PublicKeyToken=1f998c50fec78381">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\usr\lib\cli\libzeroc-ice3.3\IceBox.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

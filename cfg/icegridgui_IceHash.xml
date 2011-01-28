@@ -13,12 +13,12 @@
       <server-template id="IceHashServerTemplate">
          <parameter name="index"/>
          <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="/home/kolczak/Dokumenty/studia/icehash/IceHash/IceHashServer/bin/Debug">
-	  <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
+            <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
          </icebox>
       </server-template>
       <replica-group id="IceHashGroup">
          <load-balancing type="round-robin" n-replicas="0"/>
-         <object identity="IceHash" type="::HashModule::Hash"/>
+         <object identity="IIceHashService" type="::HashModule::Hash"/>
       </replica-group>
       <node name="Node1">
          <server-instance template="IceHashServerTemplate" index="1"/>
