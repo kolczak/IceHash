@@ -12,7 +12,7 @@
       </service-template>
       <server-template id="IceHashServerTemplate">
          <parameter name="index"/>
-         <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="/home/kolczak/Dokumenty/studia/icehash/IceHash/IceHashServer/bin/Debug">
+         <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="IceHashServer/bin/Debug">
             <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
          </icebox>
       </server-template>
