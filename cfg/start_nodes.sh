@@ -13,6 +13,6 @@ echo -ne "" > logs/.node_pids
 for i in `seq 1 10`
 do
 	echo "Starting node $i..."
-	icegridnode --Ice.Config="icegridnode$i.cfg" 2>&1 1>>"logs/icegridnode$i.log" &
+	icegridnode --Ice.Config="icegridnode$i.cfg" 2>>"logs/icegridnode$i.log" 1>>"logs/icegridnode$i.log" &
 	echo $! >> logs/.node_pids
 done
