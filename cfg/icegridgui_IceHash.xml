@@ -12,7 +12,7 @@
       </service-template>
       <server-template id="IceHashServerTemplate">
          <parameter name="index"/>
-         <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="IceHashServer/bin/Debug">
+         <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="../IceHashServer/bin/Debug">
             <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
          </icebox>
       </server-template>
@@ -23,11 +23,32 @@
       <node name="Node1">
          <server-instance template="IceHashServerTemplate" index="1"/>
       </node>
+      <node name="Node10">
+         <server-instance template="IceHashServerTemplate" index="10"/>
+      </node>
       <node name="Node2">
          <server-instance template="IceHashServerTemplate" index="2"/>
       </node>
       <node name="Node3">
          <server-instance template="IceHashServerTemplate" index="3"/>
+      </node>
+      <node name="Node4">
+         <server-instance template="IceHashServerTemplate" index="4"/>
+      </node>
+      <node name="Node5">
+         <server-instance template="IceHashServerTemplate" index="5"/>
+      </node>
+      <node name="Node6">
+         <server-instance template="IceHashServerTemplate" index="6"/>
+      </node>
+      <node name="Node7">
+         <server-instance template="IceHashServerTemplate" index="7"/>
+      </node>
+      <node name="Node8">
+         <server-instance template="IceHashServerTemplate" index="8"/>
+      </node>
+      <node name="Node9">
+         <server-instance template="IceHashServerTemplate" index="9"/>
       </node>
    </application>
 </icegrid>
