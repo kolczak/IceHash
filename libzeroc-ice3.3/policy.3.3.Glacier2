@@ -1,0 +1,11 @@
+ <configuration> 
+   <runtime> 
+     <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1"> 
+       <dependentAssembly> 
+         <assemblyIdentity name="Glacier2" publicKeyToken="1f998c50fec78381" culture=""/> 
+         <publisherPolicy apply="yes"/> 
+         <bindingRedirect oldVersion="3.3.0.0" newVersion="3.3.1.0"/> 
+       </dependentAssembly> 
+     </assemblyBinding> 
+   </runtime> 
+ </configuration>
