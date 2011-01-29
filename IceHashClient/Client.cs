@@ -23,7 +23,7 @@ namespace IceHashClient
             if(hashModule.SrvPing() == 1)
                 Console.WriteLine("Server is Alive!");
             else
-                Console.WriteLine("Server is Ded!");
+                Console.WriteLine("Server is Dead!");
             
             /*
             PrinterPrx printer = PrinterPrxHelper.checkedCast(obj);
@@ -41,7 +41,8 @@ namespace IceHashClient
             Client cln = new Client ();
             Environment.Exit(cln.main (args));
         }
-         */
+        */
+        
     }
 }
 

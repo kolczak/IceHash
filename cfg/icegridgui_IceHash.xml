@@ -4,7 +4,8 @@
    <application name="IceHashApplication">
       <service-template id="IceHashServiceTemplate">
          <parameter name="name"/>
-         <service name="${name}" entry="IceHashServer.dll:IceHashServer.IceHashServer">
+         <parameter name="index"/>
+         <service name="${name}" entry="IceHashServer.dll:IceHashServer.IceHashServer ${index}">
             <properties>
             </properties>
             <adapter name="${service}" endpoints="tcp" id="${server}.${service}" replica-group="IceHashGroup"/>
