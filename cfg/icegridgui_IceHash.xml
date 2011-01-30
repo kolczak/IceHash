@@ -14,7 +14,7 @@
       <server-template id="IceHashServerTemplate">
          <parameter name="index"/>
          <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="../IceHashServer/bin/Debug">
-            <service-instance template="IceHashServiceTemplate" name="IceHashService"/>
+            <service-instance template="IceHashServiceTemplate" name="IceHashService" index="${index}"/>
          </icebox>
       </server-template>
       <replica-group id="IceHashGroup">
