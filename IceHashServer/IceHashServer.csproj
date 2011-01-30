@@ -30,6 +30,7 @@
   <ItemGroup>
     <Compile Include="HashModuleImpl.cs" />
     <Compile Include="IceHashServer.cs" />
+    <Compile Include="ConnectedNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IceHashCommon\IceHashCommon.csproj">

@@ -5,6 +5,12 @@ namespace IceHashServer
 {
     public class HashModuleImpl : HashDisp_
     {
+        public int ID 
+        {
+            get;
+            set;
+        }
+        
         #region implemented abstract members of HashModule.HashDisp_
         public override Status Push (string key, string value, Ice.Current current__)
         {
@@ -32,7 +38,7 @@ namespace IceHashServer
         
         public override int SrvGetNodeId (Ice.Current current__)
         {
-            throw new System.NotImplementedException();
+            return ID;
         }
         
         
