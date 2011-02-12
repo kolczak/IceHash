@@ -37,8 +37,10 @@ namespace IceHashRegistry
         {
             if (!_hashServiceNames.Contains(name))
             {
+                /*
                 _hashServiceNames.Add(name);
                 _hashServices.Add(name, proxy);
+                */
             }
         }
         
@@ -57,7 +59,7 @@ namespace IceHashRegistry
                         _ids[0] = true;
                     }
                     Console.WriteLine("Zarejestrowalem endpoint dla wezla 0: {0}", endpoint);
-                    _endpoints.Add(stringId, endpoint);
+                    _endpoints.Add(0, endpoint);
                     return 0;
                 }
                 
@@ -85,7 +87,7 @@ namespace IceHashRegistry
                             Console.WriteLine("Zarejestrowalem endpoint dla wezla {0}: {1}", id.ToString(), endpoint);
                             lock (_endpoints)
                             {
-                                if (_endpoints.ContainsKey(id.ToString()))
+                                if (_endpoints.ContainsKey(id))
                                 {
                                     _endpoints.Remove(id);
                                 }
@@ -101,13 +103,13 @@ namespace IceHashRegistry
             //return "";
         }
         
-        public NodeInfo[] getIceHashNodesInfo (int id, int count, Ice.Current current__)
+        public override NodeInfo[] getIceHashNodesInfo (int id, int count, Ice.Current current__)
         {
             double step;
             int idx;
             NodeInfo []nodes;
             Random rand = new Random();
-            List<int> tmpList;
+            List<int> tmpList = new List<int>();
             
             if (count == 0)
                 return null;
@@ -118,7 +120,7 @@ namespace IceHashRegistry
                 {
                     if ((bool)de.Value)
                     {
-                        tmpList.Insert((int)de.Key);
+                        tmpList.Add((int)de.Key);
                     }
                 }
             }
@@ -151,7 +153,7 @@ namespace IceHashRegistry
             {
                 idx = (int)(idx * step);
                 nodes[i].id = tmpList[idx % tmpList.Count];
-                nodes[i] = tmpList[nodes[i].id];
+                nodes[i].endpoint = _endpoints[nodes[i].id];
                 nodes[i].type = NodeType.Successor;
             }
             
@@ -170,7 +172,7 @@ namespace IceHashRegistry
         {
             while (_pingerRunning)
             {
-                foreach (KeyValuePair<string, HashPrx> prx in _hashServices)
+                foreach (KeyValuePair<int, HashPrx> prx in _hashServices)
                 {
                     Console.WriteLine("Ping {0}", prx.Key);
                     prx.Value.SrvKeepAlive();
