@@ -11,9 +11,11 @@ namespace IceHashServer
     public class IceHashServer : Ice.Application
     {
         private Ice.ObjectAdapter _adapter;
+        /*
         private Thread _clientThread;
         private Communicator _communicator;
         private HashModuleImpl srvHashModule;
+        */
         private int _hashNodeId;
         
         public override int run(string []args)
@@ -56,6 +58,7 @@ namespace IceHashServer
                 
                 //poproś o nadanie nazwy od naszego rejestru
                 _hashNodeId = registryModule.getHashId(endpoint);
+                srvHashModule.ID = _hashNodeId;
                 
                 //zarejestruj usługę w registry o otrzymanej nazwie:
                 //_adapter.add(srvHashModule, Ice.Util.stringToIdentity(_myName));
