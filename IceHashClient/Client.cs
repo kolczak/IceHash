@@ -8,17 +8,58 @@ namespace IceHashClient
         public override int run(string[] args)
         {
             Ice.Communicator ic = null;
+            Ice.ObjectPrx hashObj;
             try
             {
+                if (args.Length >= 2)
+                {
+                    ic = Ice.Util.initialize(ref args);
+                    hashObj = ic.stringToProxy (@"IceHash:" + args[0]);
+                    if (hashObj == null)
+                    {
+                        Console.WriteLine("IceHash proxy with endpoint {0} is null", args[0]);
+                        return -1;
+                    }
+                    HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+                    if(hashModule == null)
+                    {
+                        Console.WriteLine("Invalid proxy");
+                        return -2;
+                    }
+                    
+                    switch (args[1])
+                    {
+                    case "get":
+                        hashModule.Get(Int32.Parse(args[2]));
+                        break;
+                    case "push":
+                        hashModule.Push(Int32.Parse(args[2]), args[3]);
+                        break;
+                    case "delete":
+                        hashModule.Delete(Int32.Parse(args[2]));
+                        break;
+                    }
+                } 
+                else   
+                {
+                    Console.WriteLine("Wywoływać z argumentami:\n" +
+                     " 1). endpoint serwera do którego się odwołujemy \n" +
+                     " 2). get|push|delete \n" +
+                     " 3). indeks \n" +
+                     " 4). wartość w przypadku wywoływania push \n");
+                }
+                /*
                 ic = Ice.Util.initialize(ref args);
                 Ice.ObjectPrx obj = ic.stringToProxy (@"HashRegistry: tcp -h localhost -p 1231");
                 HashRegisterPrx hashModule = HashRegisterPrxHelper.checkedCast(obj);
+                Console.WriteLine("NAME: {0}", hashModule.getHashId("endpoint"));
+                */
                 /*
                 Console.WriteLine("3");
                 if(hashModule == null)
                     throw new ApplicationException("Invalid proxy");
                 */
-                Console.WriteLine("NAME: {0}", hashModule.getHashId("endpoint"));
+                
                 
                 /*
                 if(hashModule.SrvPing() == 1)

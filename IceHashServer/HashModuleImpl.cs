@@ -33,6 +33,7 @@ namespace IceHashServer
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
         {
             _directNeighbors.Add(id, hashPrx);
+            _routingTable.Add(hashPrx.SrvGetRange(), id);
         }
         
         protected HashPrx getClientObject(Ice.Communicator communicator, string proxyName)
@@ -58,16 +59,16 @@ namespace IceHashServer
         }
         
         #region implemented abstract members of HashModule.HashDisp_
-        public override Status Push (int key, string value, Ice.Current current__)
+        public override Status Push (int key, string val, Ice.Current current__)
         {
             if (inRange(_currentRange, key))
             {
-                _values.Add(key, value);
+                _values.Add(key, val);
                 return Status.Correct;
             }
             else
             {
-                return Status.NotExist;
+                return SrvLookup(key).Push(key, val);
             }
         }
         
@@ -98,7 +99,7 @@ namespace IceHashServer
             }
             else
             {
-                return Status.NotExist;
+                return SrvLookup(key).Delete(key);
             }
         }
         
@@ -132,7 +133,6 @@ namespace IceHashServer
         
         public override HashPrx SrvLookup (int key, Ice.Current current__)
         {
-            HashPrx res = null;
             int prevVal = -1;
             bool getLast = false;
             
@@ -149,17 +149,16 @@ namespace IceHashServer
                         return _directNeighbors[prevVal];
                     else
                         //przeslij do ostatniego na liscie
-                        //TODO: przetestowac czy do Valuest mozna sie odwolywac przez indeks
                         getLast = true;
                 }
                 prevVal = kvp.Value;
             }
             
-            //w prevVal jest teraz ostatni string określający wezeł z najwyższym przedziałem
+            //w prevVal jest teraz ostatni id określający wezeł z najwyższym przedziałem
             if(getLast)
                 return _directNeighbors[prevVal];
             
-            return res;
+            return null;
         }
         
         
