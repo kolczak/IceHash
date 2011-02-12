@@ -7,42 +7,44 @@ namespace IceHashClient
     {
         public override int run(string[] args)
         {
-            Console.WriteLine("1");
-            Ice.ObjectPrx obj = communicator ().stringToProxy (
-                                @"IIceHashService"
-                                                              );
-            if (obj == null)
-                Console.WriteLine("obj jest nullem!");
-            Console.WriteLine("2");
-            //(@"SimplePrinter@SimplePrinterAdapter");
-            HashPrx hashModule = HashPrxHelper.checkedCast(obj);
-            Console.WriteLine("3");
-            if(hashModule == null)
-                throw new ApplicationException("Invalid proxy");
-            
-            if(hashModule.SrvPing() == 1)
-                Console.WriteLine("Server is Alive!");
-            else
-                Console.WriteLine("Server is Dead!");
-            
-            /*
-            PrinterPrx printer = PrinterPrxHelper.checkedCast(obj);
-            if (printer == null)
+            Ice.Communicator ic = null;
+            try
+            {
+                ic = Ice.Util.initialize(ref args);
+                Ice.ObjectPrx obj = ic.stringToProxy (@"HashRegistry: tcp -h localhost -p 1231");
+                HashRegisterPrx hashModule = HashRegisterPrxHelper.checkedCast(obj);
+                /*
+                Console.WriteLine("3");
+                if(hashModule == null)
                     throw new ApplicationException("Invalid proxy");
-            Console.WriteLine (printer.printString ("registry!"));
-            */
+                */
+                Console.WriteLine("NAME: {0}", hashModule.getHashName("dupa dupa"));
+                
+                /*
+                if(hashModule.SrvPing() == 1)
+                    Console.WriteLine("Server is Alive!");
+                else
+                    Console.WriteLine("Server is Dead!");
+                */
+                /*
+                PrinterPrx printer = PrinterPrxHelper.checkedCast(obj);
+                if (printer == null)
+                        throw new ApplicationException("Invalid proxy");
+                Console.WriteLine (printer.printString ("registry!"));
+                */
+            } catch (System.Exception ex) {
+                Console.WriteLine(ex);   
+            }
             
             return 0;
                 
         }
-        /*
+        
         public static void Main(string[] args)
         {
             Client cln = new Client ();
             Environment.Exit(cln.main (args));
         }
-        */
-        
     }
 }
 

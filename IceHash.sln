@@ -7,12 +7,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceHashServer", "IceHashSer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceHashCommon", "IceHashCommon\IceHashCommon.csproj", "{931C79B5-DE33-4964-BE22-8BAB14405F35}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceHashRegistry", "IceHashRegistry\IceHashRegistry.csproj", "{0C7743D1-E6BD-4350-A7B7-4B92B084601F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C7743D1-E6BD-4350-A7B7-4B92B084601F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C7743D1-E6BD-4350-A7B7-4B92B084601F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C7743D1-E6BD-4350-A7B7-4B92B084601F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C7743D1-E6BD-4350-A7B7-4B92B084601F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}.Release|Any CPU.ActiveCfg = Release|Any CPU

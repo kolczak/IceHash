@@ -2,6 +2,13 @@
 <!-- This file was written by IceGrid Admin -->
 <icegrid>
    <application name="IceHashApplication">
+      <service-template id="HashRegitryServiceTemplate">
+         <service name="HashRegistry" entry="IceHashRegistry.dll:IceHashRegistry.HashRegistryServer">
+            <properties>
+            </properties>
+            <adapter name="HashRegistry" endpoints="tcp" id="${server}.${service}"/>
+         </service>
+      </service-template>
       <service-template id="IceHashServiceTemplate">
          <parameter name="name"/>
          <parameter name="index"/>
@@ -11,6 +18,11 @@
             <adapter name="${service}" endpoints="tcp" id="${server}.${service}" replica-group="IceHashGroup"/>
          </service>
       </service-template>
+      <server-template id="HashRegistryTemplate">
+         <icebox id="HashRegistry" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="../IceHashRegistry/bin/Debug">
+            <service-instance template="HashRegitryServiceTemplate"/>
+         </icebox>
+      </server-template>
       <server-template id="IceHashServerTemplate">
          <parameter name="index"/>
          <icebox id="IceHashServer${index}" activation="on-demand" exe="/usr/bin/iceboxnet-3.3" pwd="../IceHashServer/bin/Debug">
@@ -21,10 +33,14 @@
          <load-balancing type="round-robin" n-replicas="0"/>
          <object identity="IIceHashService" type="::HashModule::Hash"/>
       </replica-group>
+      <replica-group id="NewReplicaGroup">
+         <load-balancing type="random" n-replicas="0"/>
+      </replica-group>
       <node name="Node1">
          <server-instance template="IceHashServerTemplate" index="1"/>
       </node>
       <node name="Node10">
+         <server-instance template="HashRegistryTemplate"/>
          <server-instance template="IceHashServerTemplate" index="10"/>
       </node>
       <node name="Node2">

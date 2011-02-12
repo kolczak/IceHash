@@ -6,7 +6,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AssemblyName>IceHashClient</AssemblyName>
     <RootNamespace>IceHashClient</RootNamespace>
   </PropertyGroup>

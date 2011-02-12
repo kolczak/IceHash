@@ -30,7 +30,7 @@ namespace IceHashServer
                 return false;
         }
         
-        public AddDirectNeighbors(string name, HashPrx hashPrx)
+        public void AddDirectNeighbors(string name, HashPrx hashPrx)
         {
             _directNeighbors.Add(name, hashPrx);
         }
