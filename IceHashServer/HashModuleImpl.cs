@@ -11,16 +11,35 @@ namespace IceHashServer
     public class HashModuleImpl : HashDisp_
     {
         protected Range _currentRange;
-        protected Dictionary <Int32, string> _values;               //wartości posiadane lokalnie
+        protected Dictionary <int, string> _values;               //wartości posiadane lokalnie
         protected SortedDictionary <Range, int> _routingTable;         //zakres wartości, nazwa węzła
         protected Dictionary <int, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
         protected HashPrx _predecessor;
         private Ice.Communicator _communicator;
         
+        public HashModuleImpl ()
+        {
+            _currentRange = new Range(0, Int32.MaxValue);
+            _values = new Dictionary<int, string>();
+            _routingTable = new SortedDictionary<Range, int>();
+            _directNeighbors = new Dictionary<int, HashPrx>();
+            _predecessor = null;
+        }
+        
         public int ID
         {
             get;
             set;
+        }
+        
+        public void SetRange(Range range)
+        {
+            _currentRange = range;
+        }
+        
+        public void SetValues(Dictionary<int, string> vals)
+        {
+            _values = new Dictionary<int, string>(vals);
         }
         
         private bool inRange(Range r, int key)
@@ -34,6 +53,11 @@ namespace IceHashServer
         public void SetPredecessor(HashPrx predecessor)
         {
             _predecessor = predecessor;
+        }
+        
+        public HashPrx GetPredecessor()
+        {
+            return _predecessor;   
         }
         
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
@@ -69,6 +93,8 @@ namespace IceHashServer
         {
             if (inRange(_currentRange, key))
             {
+                if (_values.ContainsKey(key))
+                    _values.Remove(key);
                 _values.Add(key, val);
                 return Status.Correct;
             }
@@ -81,11 +107,12 @@ namespace IceHashServer
         
         public override string Get (int key, Ice.Current current__)
         {
-            string result = null;
+            string result = "";
             
             if (inRange(_currentRange, key))
             {
-                result = _values[key];
+                if (_values.ContainsKey(key))
+                    result = _values[key];
             }
             else
             {
@@ -114,6 +141,9 @@ namespace IceHashServer
             RegisterResponse response = new RegisterResponse();
             Dictionary<int, string> values;
             Range newRange = new Range();
+            
+            values = new Dictionary<int, string>();
+            
             /*
             HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
             if (proxy != null)
@@ -129,20 +159,35 @@ namespace IceHashServer
                 {
                     newRange.startRange = 0;
                     newRange.endRange = 0;
-                    return newRange;
+                    response.keysRange = newRange;
+                    return response;
                 }
                     
                 newRange.startRange = _currentRange.startRange + rangeSize / 2;
                 newRange.endRange = _currentRange.endRange;
             }
+            Console.WriteLine("Zarejestrowano nowy wezel. range({0}, {1})",
+                              newRange.startRange, newRange.endRange);
+            lock (_values)
+            {
+                foreach (KeyValuePair<int, string> entry in _values)
+                {
+                    if (inRange(newRange, entry.Key))
+                    {
+                        values.Add(entry.Key, entry.Value);
+                        _values.Remove(entry.Key);
+                    }
+                }
+            }
             response.keysRange = newRange;
+            response.values = _values;
             
             return response;
         }
         
         public override int SrvGetNodeId (Ice.Current current__)
         {
-            
+            return 0;
         }
         
         
@@ -161,6 +206,8 @@ namespace IceHashServer
         {
             int prevVal = -1;
             bool getLast = false;
+            
+            Console.WriteLine("Wywolano metode lookup dla klucza {0}", key);
             
             foreach (KeyValuePair<Range, int> kvp in _routingTable)
             {
@@ -199,8 +246,5 @@ namespace IceHashServer
         }
         
         #endregion
-        public HashModuleImpl ()
-        {
-        }
     }
 }

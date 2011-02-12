@@ -6,7 +6,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{A6820E9F-2F03-4C9A-9028-747E3F9604D9}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AssemblyName>IceHashServer</AssemblyName>
     <RootNamespace>IceHashServer</RootNamespace>
     <newfilesearch>OnLoad</newfilesearch>
@@ -39,10 +39,6 @@
       <Project>{931C79B5-DE33-4964-BE22-8BAB14405F35}</Project>
       <Name>IceHashCommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\IceHashClient\IceHashClient.csproj">
-      <Project>{18DC90EF-B09A-42AE-9D42-D567CCE56F3B}</Project>
-      <Name>IceHashClient</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Ice, Version=3.3.1.0, Culture=neutral, PublicKeyToken=1f998c50fec78381">
@@ -55,9 +51,4 @@
     </Reference>
     <Reference Include="System" />
   </ItemGroup>
-  <ProjectExtensions>
-    <MonoDevelop>
-      <Properties InternalTargetFrameworkVersion="3.5" />
-    </MonoDevelop>
-  </ProjectExtensions>
 </Project>

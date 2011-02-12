@@ -1,5 +1,5 @@
 module HashModule {
-	struct Range {
+	class Range {
 		int startRange;
 		int endRange;
 	};
@@ -12,7 +12,7 @@ module HashModule {
 
 	dictionary<int, string> ValuesDictionary; 
 
-	struct RegisterResponse {
+	class RegisterResponse {
 		Range keysRange;
 		ValuesDictionary values;
 	};
@@ -21,7 +21,7 @@ module HashModule {
 		Status Push(int key, string value);
 		string Get(int key);
 		Status Delete(int key);
-		Range SrvRegister(int nodeId);
+		RegisterResponse SrvRegister(int nodeId);
 		Range SrvGetRange();
 		int SrvGetNodeId();
 		int SrvPing();

@@ -72,27 +72,42 @@ namespace IceHashServer
                 Console.WriteLine("Wystartowalem serwer " + _hashNodeId);
                 
                 //sleep
-                Thread.Sleep(5 * 1000);
+                //Thread.Sleep(5 * 1000);
                 
                 Ice.ObjectPrx hashObj;
                 //poproś o ileś nazw innych węzłów żeby pobrać dane
                 int count = registryModule.getIceHashNodesCount();
+                
                 NodeInfo[] nodesInfo = registryModule.getIceHashNodesInfo(_hashNodeId, (int)((double)count * 0.5));
-                foreach(NodeInfo node in nodesInfo)
+                if (nodesInfo.Length > 0)
                 {
-                    hashObj = ic.stringToProxy (@"IceHash:" + node.endpoint);
-                    if (hashObj == null)
+                    foreach(NodeInfo node in nodesInfo)
                     {
-                        Console.WriteLine("IceHash proxy with endpoint {0} is null", node.endpoint);
-                        return -1;
+                        hashObj = ic.stringToProxy (@"IceHash:" + node.endpoint);
+                        if (hashObj == null)
+                        {
+                            Console.WriteLine("IceHash proxy with endpoint {0} is null", node.endpoint);
+                            return -1;
+                        }
+                        HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+                        if(hashModule == null)
+                        {
+                            Console.WriteLine("Invalid proxy");
+                            return -2;
+                        }
+                        if (node.type == NodeType.Predecessor)
+                            srvHashModule.SetPredecessor(hashModule);
+                        srvHashModule.AddDirectNeighbors(node.id, hashModule);
                     }
-                    HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
-                    if(hashModule == null)
-                    {
-                        Console.WriteLine("Invalid proxy");
-                        return -2;
-                    }
-                    srvHashModule.AddDirectNeighbors(node.id, hashModule);
+                
+                    HashPrx predecessor = srvHashModule.GetPredecessor();
+                    RegisterResponse response = predecessor.SrvRegister(_hashNodeId);
+                    srvHashModule.SetValues(response.values);
+                    srvHashModule.SetRange(response.keysRange);
+                }
+                else
+                {
+                    //pierwszy wezel
                 }
                 
             } catch (System.Exception ex) {
@@ -102,7 +117,7 @@ namespace IceHashServer
             return 0;
         }
         
-        void Main(string []args)
+        public static void Main(string []args)
         {
             IceHashServer srv = new IceHashServer();
             Environment.Exit(srv.run(args));

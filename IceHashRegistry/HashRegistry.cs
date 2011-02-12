@@ -28,7 +28,7 @@ namespace IceHashRegistry
             _endpoints = new Dictionary<int, string>();
             _pingerRunning = true;
             //_clientThread = new Thread(new ThreadStart(this.pingerThread));
-            _clientThread.Start();
+            //_clientThread.Start();
             _ids = new SortedList();
             _currLevel = 0;
         }
@@ -108,7 +108,6 @@ namespace IceHashRegistry
             double step;
             int idx;
             NodeInfo []nodes;
-            Random rand = new Random();
             List<int> tmpList = new List<int>();
             
             if (count == 0)
@@ -131,6 +130,8 @@ namespace IceHashRegistry
                 tmpList.AddRange(_hashServiceNames);
             }
             */
+            
+            Console.WriteLine("Get Icehashnodesinfo");
             
             count += 1;
             if (count > tmpList.Count - 1)
@@ -164,6 +165,7 @@ namespace IceHashRegistry
         {
             lock(_endpoints)
             {
+                Console.WriteLine("count: {0}", _endpoints.Count);
                 return _endpoints.Count;
             }
         }

@@ -30,7 +30,7 @@ namespace IceHashClient
                     switch (args[1])
                     {
                     case "get":
-                        hashModule.Get(Int32.Parse(args[2]));
+                        Console.WriteLine(hashModule.Get(Int32.Parse(args[2])));
                         break;
                     case "push":
                         hashModule.Push(Int32.Parse(args[2]), args[3]);
