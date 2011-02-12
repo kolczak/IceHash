@@ -53,5 +53,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libzeroc-ice3.3\IceBox.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
   </ItemGroup>
 </Project>

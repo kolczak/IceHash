@@ -14,7 +14,7 @@ namespace IceHashServer
         private Thread _clientThread;
         private Communicator _communicator;
         private HashModuleImpl srvHashModule;
-        private string _myName;
+        private int _hashNodeId;
         
         public override int run(string []args)
         {
@@ -55,7 +55,7 @@ namespace IceHashServer
                 }
                 
                 //poproś o nadanie nazwy od naszego rejestru
-                _myName = registryModule.getHashName(endpoint);
+                _hashNodeId = registryModule.getHashId(endpoint);
                 
                 //zarejestruj usługę w registry o otrzymanej nazwie:
                 //_adapter.add(srvHashModule, Ice.Util.stringToIdentity(_myName));
@@ -66,7 +66,7 @@ namespace IceHashServer
                 ic.waitForShutdown();
                 
                 _adapter.activate();
-                Console.WriteLine("Wystartowalem serwer " + _myName);
+                Console.WriteLine("Wystartowalem serwer " + _hashNodeId);
                 
                 //sleep
                 Thread.Sleep(5 * 1000);
@@ -74,13 +74,13 @@ namespace IceHashServer
                 Ice.ObjectPrx hashObj;
                 //poproś o ileś nazw innych węzłów żeby pobrać dane
                 int count = registryModule.getIceHashNodesCount();
-                string[] endpoints = registryModule.getIceHashNames((int)((double)count * 0.5));
-                foreach(string str in endpoints)
+                NodeInfo[] nodesInfo = registryModule.getIceHashNodesInfo(_hashNodeId, (int)((double)count * 0.5));
+                foreach(NodeInfo node in nodesInfo)
                 {
-                    hashObj = ic.stringToProxy (@"IceHash:" + str);
+                    hashObj = ic.stringToProxy (@"IceHash:" + node.endpoint);
                     if (hashObj == null)
                     {
-                        Console.WriteLine("IceHash proxy with endpoint {0} is null", str);
+                        Console.WriteLine("IceHash proxy with endpoint {0} is null", node.endpoint);
                         return -1;
                     }
                     HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
