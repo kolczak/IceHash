@@ -9,6 +9,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>IceHashServer</AssemblyName>
     <RootNamespace>IceHashServer</RootNamespace>
+    <newfilesearch>OnLoad</newfilesearch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

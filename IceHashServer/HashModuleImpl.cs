@@ -1,14 +1,46 @@
 using System;
+using System.Collections.Generic;
+
+using IceBox;
+
 using HashModule;
 
 namespace IceHashServer
 {
     public class HashModuleImpl : HashDisp_
     {
-        public int ID 
+        protected Range _currentRange;
+        protected Dictionary <Int32, string> _values;
+        protected Dictionary <Range, string> _routingTable;
+        protected List<HashModuleImpl> _directNeighbors;
+        private Ice.Communicator _communicator;
+        
+        public int ID
         {
             get;
             set;
+        }
+        
+        protected HashPrx getClientObject(Ice.Communicator communicator, string proxyName)
+        {
+            Ice.ObjectPrx obj = communicator.stringToProxy(proxyName);;
+            if (obj == null)
+            {
+                Console.WriteLine("Created proxy is null");
+                return null;
+            }
+            else
+            {
+                HashPrx hashModule = HashPrxHelper.checkedCast(obj);
+                if(hashModule == null)
+                    Console.WriteLine("Invalid proxy");
+                return hashModule;
+            }
+        }
+        
+        public void SetCommunicator(Ice.Communicator communicator)
+        {
+              _communicator = communicator;
         }
         
         #region implemented abstract members of HashModule.HashDisp_
@@ -20,7 +52,17 @@ namespace IceHashServer
         
         public override string Get (string key, Ice.Current current__)
         {
-            throw new System.NotImplementedException();
+            string result = null;
+            if (_currentRange.startRange >= key && _currentRange.endRange <= key)
+            {
+                result = _values[key];
+            }
+            else
+            {
+                SrvLookup(key);
+            }
+            
+            return result;
         }
         
         
@@ -29,12 +71,16 @@ namespace IceHashServer
             throw new System.NotImplementedException();
         }
         
-        
-        public override Range SrvRegister (Ice.Current current__)
+        public Range SrvRegister (int nodeId, Ice.Current current__)
         {
-            throw new System.NotImplementedException();
+            HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
+            Range newRange = new Range();
+            if (proxy != null)
+            {
+                
+            }
+            return;
         }
-        
         
         public override int SrvGetNodeId (Ice.Current current__)
         {
@@ -44,12 +90,18 @@ namespace IceHashServer
         
         public override int SrvPing (Ice.Current current__)
         {
-            Console.WriteLine("Dostalem Pinga");
+            //Console.WriteLine("Dostalem Pinga");
+            //Console.WriteLine(current__.);
             return 1;
         }
         
+        public Range SrvGetRange ()
+        {
+            return _currentRange;
+        }
         
-        public override Connector SrvLookup (int key, Ice.Current current__)
+        
+        public override string SrvLookup (int key, Ice.Current current__)
         {
             throw new System.NotImplementedException();
         }
@@ -63,6 +115,19 @@ namespace IceHashServer
         #endregion
         public HashModuleImpl ()
         {
+        }
+    }
+    
+    class HashRegisterImpl : HashRegisterDisp_
+    {
+        public override void register (HashPrx proxy, Ice.Current current__)
+        {
+            throw new NotImplementedException ();
+        }
+        
+        public override string[] getIceHashNames (int count, Ice.Current current__)
+        {
+            throw new NotImplementedException ();
         }
     }
 }
