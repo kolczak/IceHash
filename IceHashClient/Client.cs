@@ -18,7 +18,7 @@ namespace IceHashClient
                 if(hashModule == null)
                     throw new ApplicationException("Invalid proxy");
                 */
-                Console.WriteLine("NAME: {0}", hashModule.getHashName("dupa dupa"));
+                Console.WriteLine("NAME: {0}", hashModule.getHashId("endpoint"));
                 
                 /*
                 if(hashModule.SrvPing() == 1)

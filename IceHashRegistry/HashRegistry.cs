@@ -12,8 +12,8 @@ namespace IceHashRegistry
     {
         private bool _pingerRunning;
         private List<string> _hashServiceNames;
-        private Dictionary<string, HashPrx> _hashServices;
-        private Dictionary<string, string> _endpoints;
+        private Dictionary<int, HashPrx> _hashServices;
+        private Dictionary<int, string> _endpoints;
         private Thread _clientThread;
         private SortedList _ids;
         private int _currLevel;
@@ -24,10 +24,10 @@ namespace IceHashRegistry
         public HashRegistryImpl()
         {
             _hashServiceNames = new List<string>();
-            _hashServices = new Dictionary<string, HashPrx>();
-            _endpoints = new Dictionary<string, string>();
+            _hashServices = new Dictionary<int, HashPrx>();
+            _endpoints = new Dictionary<int, string>();
             _pingerRunning = true;
-            _clientThread = new Thread(new ThreadStart(this.pingerThread));
+            //_clientThread = new Thread(new ThreadStart(this.pingerThread));
             _clientThread.Start();
             _ids = new SortedList();
             _currLevel = 0;
@@ -42,7 +42,7 @@ namespace IceHashRegistry
             }
         }
         
-        public override string getHashName (string endpoint, Ice.Current current__)
+        public override int getHashId (string endpoint, Ice.Current current__)
         {
             string stringId;
             int step, steps;
@@ -51,12 +51,14 @@ namespace IceHashRegistry
             {            
                 if (_currLevel == 0)
                 {
-                    _currLevel = 1;
-                    _ids[0] = true;
-                    stringId = "0";
+                    lock (_ids)
+                    {
+                        _currLevel = 1;
+                        _ids[0] = true;
+                    }
                     Console.WriteLine("Zarejestrowalem endpoint dla wezla 0: {0}", endpoint);
                     _endpoints.Add(stringId, endpoint);
-                    return stringId;
+                    return 0;
                 }
                 
                 while (true)
@@ -67,13 +69,29 @@ namespace IceHashRegistry
                     for (int i = 0; i < steps; i++)
                     {
                         int id = i * step;
-                        if (!(_ids.ContainsKey(id)))
+                        bool not_exists;
+                        lock (_ids)
                         {
-                            _ids[id] = true;
+                            not_exists = !(_ids.ContainsKey(id)) || !((bool)_ids[id]);
+                        }
+                        
+                        if (not_exists)
+                        {
+                            lock (_ids)
+                            {
+                                _ids[id] = true;
+                            }
                             stringId = id.ToString();
                             Console.WriteLine("Zarejestrowalem endpoint dla wezla {0}: {1}", id.ToString(), endpoint);
-                            _endpoints.Add(id.ToString(), endpoint);
-                            return stringId;
+                            lock (_endpoints)
+                            {
+                                if (_endpoints.ContainsKey(id.ToString()))
+                                {
+                                    _endpoints.Remove(id);
+                                }
+                                _endpoints.Add(id, endpoint);
+                            }
+                            return id;
                         }
                     }
                     
@@ -83,37 +101,69 @@ namespace IceHashRegistry
             //return "";
         }
         
-        public override string[] getIceHashNames (int count, Ice.Current current__)
+        public NodeInfo[] getIceHashNodesInfo (int id, int count, Ice.Current current__)
         {
+            double step;
             int idx;
-            string []names;
+            NodeInfo []nodes;
             Random rand = new Random();
-            List<string> tmpList = new List<string>();
+            List<int> tmpList;
             
+            if (count == 0)
+                return null;
+            
+            lock (_ids)
+            {
+                foreach (DictionaryEntry de in _ids)
+                {
+                    if ((bool)de.Value)
+                    {
+                        tmpList.Insert((int)de.Key);
+                    }
+                }
+            }
+            
+            /*
             lock (_hashServiceNames)
             {
                 tmpList.AddRange(_hashServiceNames);
             }
+            */
             
-            if (count > tmpList.Count)
+            count += 1;
+            if (count > tmpList.Count - 1)
             {
                 count = _hashServiceNames.Count;
             }
             
-            names = new string[count];
-            for (int i = 0; i < count; i++)
+            idx = tmpList.IndexOf(id);
+            nodes = new NodeInfo[count];
+            //nodes[0].id = 
+            if (idx == 0)
+                nodes[0].id = tmpList[tmpList.Count - 1];
+            else
+                nodes[0].id = tmpList[idx - 1];
+            nodes[0].endpoint = _endpoints[nodes[0].id];
+            nodes[0].type = NodeType.Predecessor;
+            idx = 1;
+            step = Math.Pow(tmpList.Count, (double)1/(double)(count - 2));
+            for (int i = 1; i < count; i++)
             {
-                idx = rand.Next() % tmpList.Count;
-                names[i] = tmpList[idx];
-                tmpList.RemoveAt(idx);
+                idx = (int)(idx * step);
+                nodes[i].id = tmpList[idx % tmpList.Count];
+                nodes[i] = tmpList[nodes[i].id];
+                nodes[i].type = NodeType.Successor;
             }
             
-            return names;
+            return nodes;
         }
         
         public override int getIceHashNodesCount (Ice.Current current__)
         {
-            return _hashServiceNames.Count;
+            lock(_endpoints)
+            {
+                return _endpoints.Count;
+            }
         }
         
         private void pingerThread()
@@ -124,6 +174,7 @@ namespace IceHashRegistry
                 {
                     Console.WriteLine("Ping {0}", prx.Key);
                     prx.Value.SrvKeepAlive();
+                    Thread.Sleep(10000);
                 }
             }
         }
