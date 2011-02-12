@@ -12,7 +12,7 @@ namespace IceHashServer
     {
         protected Range _currentRange;
         protected Dictionary <Int32, string> _values;               //wartości posiadane lokalnie
-        protected Dictionary <Range, string> _routingTable;         //zakres wartości, nazwa węzła
+        protected SortedDictionary <Range, string> _routingTable;         //zakres wartości, nazwa węzła
         protected Dictionary <string, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
         private Ice.Communicator _communicator;
         
@@ -69,8 +69,6 @@ namespace IceHashServer
             {
                 return Status.NotExist;
             }
-            
-            return Status.Error;
         }
         
         
@@ -84,7 +82,7 @@ namespace IceHashServer
             }
             else
             {
-                result = SrvLookup(key);
+                result = SrvLookup(key).Get(key);
             }
             
             return result;
@@ -134,17 +132,34 @@ namespace IceHashServer
         }
         
         
-        public override string SrvLookup (int key, Ice.Current current__)
+        public override HashPrx SrvLookup (int key, Ice.Current current__)
         {
-            string res = null;
+            HashPrx res = null;
+            string prevVal = null;
+            bool getLast = false;
             
             foreach (KeyValuePair<Range, string> kvp in _routingTable)
             {
                 if(inRange(kvp.Key, key))
                 {
-                    return _directNeighbors[kvp.Value].Get(key);
+                    return _directNeighbors[kvp.Value];
                 }
+                else if (kvp.Key.startRange > key)  //jezeli poczatkowe klucze w tablicy routingu sa juz 
+                                                    //wieksze od poszukiwanego
+                {
+                    if(prevVal != null)
+                        return _directNeighbors[prevVal];
+                    else
+                        //przeslij do ostatniego na liscie
+                        //TODO: przetestowac czy do Valuest mozna sie odwolywac przez indeks
+                        getLast = true;
+                }
+                prevVal = kvp.Value;
             }
+            
+            //w prevVal jest teraz ostatni string określający wezeł z najwyższym przedziałem
+            if(getLast)
+                return _directNeighbors[prevVal];
             
             return res;
         }

@@ -19,7 +19,7 @@ module HashModule {
 		int SrvGetNodeId();
 		int SrvPing();
 		//Connector SrvLookup(int key);
-		string SrvLookup(int key); //returns service name
+		Hash *SrvLookup(int key); //returns service name
 		string SrvGet(int key);
 		void SrvKeepAlive();
 	};
