@@ -11,9 +11,9 @@ module HashModule {
 	enum Status { Correct, Exists, Error, NotExist };
 
 	interface Hash {
-		Status Push(string key, string value);
-		string Get(string key);
-		Status Delete(string key);
+		Status Push(int key, string value);
+		string Get(int key);
+		Status Delete(int key);
 		Range SrvRegister(int nodeId);
 		Range SrvGetRange();
 		int SrvGetNodeId();
