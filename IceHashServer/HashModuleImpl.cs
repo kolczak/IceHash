@@ -12,8 +12,8 @@ namespace IceHashServer
     {
         protected Range _currentRange;
         protected Dictionary <Int32, string> _values;               //wartości posiadane lokalnie
-        protected SortedDictionary <Range, string> _routingTable;         //zakres wartości, nazwa węzła
-        protected Dictionary <string, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
+        protected SortedDictionary <Range, int> _routingTable;         //zakres wartości, nazwa węzła
+        protected Dictionary <int, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
         private Ice.Communicator _communicator;
         
         public int ID
@@ -30,9 +30,9 @@ namespace IceHashServer
                 return false;
         }
         
-        public void AddDirectNeighbors(string name, HashPrx hashPrx)
+        public void AddDirectNeighbors(int id, HashPrx hashPrx)
         {
-            _directNeighbors.Add(name, hashPrx);
+            _directNeighbors.Add(id, hashPrx);
         }
         
         protected HashPrx getClientObject(Ice.Communicator communicator, string proxyName)
@@ -100,8 +100,6 @@ namespace IceHashServer
             {
                 return Status.NotExist;
             }
-            
-            return Status.Error;
         }
         
         public override Range SrvRegister (int nodeId, Ice.Current current__)
@@ -135,10 +133,10 @@ namespace IceHashServer
         public override HashPrx SrvLookup (int key, Ice.Current current__)
         {
             HashPrx res = null;
-            string prevVal = null;
+            int prevVal = -1;
             bool getLast = false;
             
-            foreach (KeyValuePair<Range, string> kvp in _routingTable)
+            foreach (KeyValuePair<Range, int> kvp in _routingTable)
             {
                 if(inRange(kvp.Key, key))
                 {
@@ -147,7 +145,7 @@ namespace IceHashServer
                 else if (kvp.Key.startRange > key)  //jezeli poczatkowe klucze w tablicy routingu sa juz 
                                                     //wieksze od poszukiwanego
                 {
-                    if(prevVal != null)
+                    if(prevVal != -1)
                         return _directNeighbors[prevVal];
                     else
                         //przeslij do ostatniego na liscie

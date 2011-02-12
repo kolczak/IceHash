@@ -89,7 +89,7 @@ namespace IceHashServer
                         Console.WriteLine("Invalid proxy");
                         return -2;
                     }
-                    srvHashModule.AddDirectNeighbors(hashModule);
+                    srvHashModule.AddDirectNeighbors(node.id, hashModule);
                 }
                 
             } catch (System.Exception ex) {
