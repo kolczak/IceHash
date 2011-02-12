@@ -28,7 +28,7 @@ namespace IceHashServer
             }
             
             Client cln = new Client(communicator);
-            _clientThread = new Thread(new ThreadStart(Client.Run));
+            _clientThread = new Thread(new ThreadStart(cln.Run));
             _clientThread.Start();
             
             _adapter = communicator.createObjectAdapter(name);
