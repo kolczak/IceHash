@@ -13,6 +13,7 @@ namespace IceHashRegistry
         private List<string> _hashServiceNames;
         private Dictionary<string, HashPrx> _hashServices;
         private Thread _clientThread;
+        private static const int MAX_ID = 1024;
         
         public HashRegistryImpl()
         {
