@@ -71,9 +71,27 @@ namespace IceHashServer
                 //sleep
                 Thread.Sleep(5 * 1000);
                 
+                Ice.ObjectPrx hashObj;
+                //poproś o ileś nazw innych węzłów żeby pobrać dane
+                int count = registryModule.getIceHashNodesCount();
+                string[] endpoints = registryModule.getIceHashNames((int)((double)count * 0.5));
+                foreach(string str in endpoints)
+                {
+                    hashObj = ic.stringToProxy (@"IceHash:" + str);
+                    if (hashObj == null)
+                    {
+                        Console.WriteLine("IceHash proxy with endpoint {0} is null", str);
+                        return -1;
+                    }
+                    HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+                    if(hashModule == null)
+                    {
+                        Console.WriteLine("Invalid proxy");
+                        return -2;
+                    }
+                    srvHashModule.AddDirectNeighbors(hashModule);
+                }
                 
-                //poproś o ileś nazw innych węzłów żeby poprać dane
-                //registryModule.
             } catch (System.Exception ex) {
                 Console.WriteLine(ex);   
             }
