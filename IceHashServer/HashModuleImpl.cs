@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 
 using IceBox;
@@ -53,6 +54,7 @@ namespace IceHashServer
         public override string Get (string key, Ice.Current current__)
         {
             string result = null;
+            /*
             if (_currentRange.startRange >= key && _currentRange.endRange <= key)
             {
                 result = _values[key];
@@ -61,7 +63,7 @@ namespace IceHashServer
             {
                 SrvLookup(key);
             }
-            
+            */
             return result;
         }
         
@@ -71,7 +73,7 @@ namespace IceHashServer
             throw new System.NotImplementedException();
         }
         
-        public Range SrvRegister (int nodeId, Ice.Current current__)
+        public override Range SrvRegister (int nodeId, Ice.Current current__)
         {
             HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
             Range newRange = new Range();
@@ -79,7 +81,7 @@ namespace IceHashServer
             {
                 
             }
-            return;
+            return new Range();
         }
         
         public override int SrvGetNodeId (Ice.Current current__)
@@ -95,7 +97,7 @@ namespace IceHashServer
             return 1;
         }
         
-        public Range SrvGetRange ()
+        public override Range SrvGetRange (Ice.Current current__)
         {
             return _currentRange;
         }
@@ -112,6 +114,11 @@ namespace IceHashServer
             throw new System.NotImplementedException();
         }
         
+        public override void SrvKeepAlive (Ice.Current current__)
+        {
+            return;
+        }
+        
         #endregion
         public HashModuleImpl ()
         {
@@ -120,15 +127,64 @@ namespace IceHashServer
     
     class HashRegisterImpl : HashRegisterDisp_
     {
-        public override void register (HashPrx proxy, Ice.Current current__)
+        private bool _pingerRunning;
+        private List<string> _hashServiceNames;
+        private Dictionary<string, HashPrx> _hashServices;
+        private Thread _clientThread;
+        
+        public HashRegisterImpl()
         {
-            throw new NotImplementedException ();
+            _hashServiceNames = new List<string>();
+            _hashServices = new Dictionary<string, HashPrx>();
+            _pingerRunning = true;
+            _clientThread = new Thread(new ThreadStart(this.pingerThread));
+            _clientThread.Start();
+        }
+        
+        public override void register (string name, HashPrx proxy, Ice.Current current__)
+        {
+            if (!_hashServiceNames.Contains(name))
+            {
+                _hashServiceNames.Add(name);
+                _hashServices.Add(name, proxy);
+            }
         }
         
         public override string[] getIceHashNames (int count, Ice.Current current__)
         {
-            throw new NotImplementedException ();
+            string []names;
+            Random rand = new Random();
+            List<string> tmpList = new List<string>();
+            
+            lock (_hashServiceNames)
+            {
+                tmpList.AddRange(_hashServiceNames);
+            }
+            
+            if (count > tmpList.Count)
+            {
+                count = _hashServiceNames.Count;
+            }
+            
+            names = new string[count];
+            
+            return names;
+        }
+        
+        public override int getIceHashNodesCount (Ice.Current current__)
+        {
+            return _hashServiceNames.Count;
+        }
+        
+        private void pingerThread()
+        {
+            while (_pingerRunning)
+            {
+                foreach (string serviceName in _hashServiceNames)
+                {
+                    
+                }
+            }
         }
     }
 }
-

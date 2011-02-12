@@ -43,7 +43,6 @@ namespace IceHashServer
         protected HashPrx getClientObject(Ice.Communicator communicator)
         {
             Ice.ObjectPrx obj = communicator.stringToProxy( @"IIceHashService");
-            obj.
             Console.WriteLine("Communicator proxy created");
             if (obj == null)
             {
