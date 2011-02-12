@@ -24,11 +24,19 @@ module HashModule {
 		void SrvKeepAlive();
 	};
 
-	sequence<string> StringSeq;
+	enum NodeType { Predecessor, Successor };
+
+	struct NodeInfo {
+		int id;
+		string endpoint;
+		NodeType type;
+	};
+
+	sequence<NodeInfo> NodeInfoSeq;
 
     interface HashRegister {
-		string getHashName(string endpoint);
-        StringSeq getIceHashNames(int count);
+		int getHashId(string endpoint);
+        NodeInfoSeq getIceHashNodesInfo(int id, int count);
         void register(string name, Hash *proxy);
 		int getIceHashNodesCount();
     };
