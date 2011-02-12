@@ -10,6 +10,13 @@ module HashModule {
 
 	enum Status { Correct, Exists, Error, NotExist };
 
+	dictionary<int, string> ValuesDictionary; 
+
+	struct RegisterResponse {
+		Range keysRange;
+		ValuesDictionary values;
+	};
+
 	interface Hash {
 		Status Push(int key, string value);
 		string Get(int key);

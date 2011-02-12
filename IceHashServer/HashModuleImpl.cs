@@ -14,6 +14,7 @@ namespace IceHashServer
         protected Dictionary <Int32, string> _values;               //wartości posiadane lokalnie
         protected SortedDictionary <Range, int> _routingTable;         //zakres wartości, nazwa węzła
         protected Dictionary <int, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
+        protected HashPrx _predecessor;
         private Ice.Communicator _communicator;
         
         public int ID
@@ -28,6 +29,11 @@ namespace IceHashServer
                 return true;
             else
                 return false;
+        }
+        
+        public void SetPredecessor(HashPrx predecessor)
+        {
+            _predecessor = predecessor;
         }
         
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
@@ -102,20 +108,40 @@ namespace IceHashServer
             }
         }
         
-        public override Range SrvRegister (int nodeId, Ice.Current current__)
+        public override RegisterResponse SrvRegister (int nodeId, Ice.Current current__)
         {
-            HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
+            RegisterResponse response = new RegisterResponse();
+            Dictionary<int, string> values;
             Range newRange = new Range();
+            /*
+            HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
             if (proxy != null)
             {
                 
             }
-            return newRange;
+            */
+            
+            lock (_currentRange)
+            {
+                int rangeSize = _currentRange.endRange - _currentRange.startRange;
+                if (rangeSize <= 0)
+                {
+                    newRange.startRange = 0;
+                    newRange.endRange = 0;
+                    return newRange;
+                }
+                    
+                newRange.startRange = _currentRange.startRange + rangeSize / 2;
+                newRange.endRange = _currentRange.endRange;
+            }
+            response.keysRange = newRange;
+            
+            return response;
         }
         
         public override int SrvGetNodeId (Ice.Current current__)
         {
-            return ID;
+            
         }
         
         
