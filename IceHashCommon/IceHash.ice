@@ -27,7 +27,7 @@ module HashModule {
 	sequence<string> StringSeq;
 
     interface HashRegister {
-        void register(Hash *proxy);
+        void register(string name, Hash *proxy);
         StringSeq getIceHashNames(int count);
 		int getIceHashNodesCount();
     };
