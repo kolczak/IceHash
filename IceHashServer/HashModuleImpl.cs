@@ -28,6 +28,7 @@ namespace IceHashServer
         protected SortedDictionary <Range, int> _routingTable;         //zakres wartości, nazwa węzła
         protected Dictionary <int, HashPrx> _directNeighbors;    //nazwa węzła, proxy do niego
         protected HashPrx _predecessor;
+        protected HashPrx _ownProxy;
         private Ice.Communicator _communicator;
         
         public HashModuleImpl ()
@@ -37,6 +38,11 @@ namespace IceHashServer
             _routingTable = new SortedDictionary<Range, int>(new RangeComparator());
             _directNeighbors = new Dictionary<int, HashPrx>();
             _predecessor = null;
+        }
+        
+        public void SetOwnProxy(HashPrx prx)
+        {
+            _ownProxy = prx;
         }
         
         private bool inRange(Range r, int key)
@@ -122,10 +128,13 @@ namespace IceHashServer
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
         {
             Console.WriteLine("Dodaje proxy i range dla node {0}", id);
-            if (!_directNeighbors.ContainsKey(id))
+            lock (_directNeighbors)
             {
-                _directNeighbors.Add(id, hashPrx);
-                _routingTable.Add(hashPrx.SrvGetRange(), id);
+                if (!_directNeighbors.ContainsKey(id))
+                {
+                    _directNeighbors.Add(id, hashPrx);
+                    _routingTable.Add(hashPrx.SrvGetRange(), id);
+                }
             }
             
             Console.WriteLine("Pelna tablica routing'u:");
@@ -228,7 +237,7 @@ namespace IceHashServer
                     return "ERROR";
                 try{
                     result = proxy.Get(key);
-                }catch(System.Exception ex){    //węzeł padł
+                }catch(System.Exception){    //węzeł padł
                     if(FailureDetected(proxy) == Status.Correct)
                         return Get(key);    //sprobuj geta 
                     else
@@ -258,64 +267,98 @@ namespace IceHashServer
         
         public override RegisterResponse SrvRegister (int nodeId, HashPrx proxy, Ice.Current current__)
         {
+            bool successorAlive = false;
             RegisterResponse response = new RegisterResponse();
             Dictionary<int, string> values;
             Range newRange = new Range();
             
             values = new Dictionary<int, string>();
-            /*
-            Ice.ObjectPrx hashObj;
-            hashObj = _communicator.stringToProxy (@"IceHash:" + endpoint);
-            if (hashObj == null)
-            {
-                Console.WriteLine("IceHash proxy with endpoint {0} is null", endpoint);
-                return response;
-            }
-            HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
-            if(hashModule == null)
-            {
-                Console.WriteLine("Invalid proxy");
-                return response;
-            }
-            AddDirectNeighbors(nodeId, hashModule);
-            */
             
-            lock (_currentRange)
+            Range successorRange = FindSuccessor();
+            if (successorRange != null)
             {
-                int rangeSize = _currentRange.endRange - _currentRange.startRange;
-                if (rangeSize <= 0)
-                {
-                    newRange.startRange = 0;
-                    newRange.endRange = 0;
-                    response.keysRange = newRange;
-                    return response;
-                }
-                    
-                newRange.startRange = _currentRange.startRange + rangeSize / 2;
-                newRange.endRange = _currentRange.endRange;
-                _currentRange.endRange = newRange.startRange - 1;
-            }
-            Console.WriteLine("Zarejestrowano nowy wezel. range({0}, {1})",
-                              newRange.startRange, newRange.endRange);
-            Console.WriteLine("Obecny lokalny range ({0}, {1})",
-                              _currentRange.startRange, _currentRange.endRange);
-           
-            _directNeighbors.Add(nodeId, proxy);
-            _routingTable.Add(newRange, nodeId);
-            lock (_values)
-            {
-                foreach (KeyValuePair<int, string> entry in _values)
-                {
-                    if (inRange(newRange, entry.Key))
+                int id;
+                HashPrx prx = null;
+                try
+                {      
+                    lock (_directNeighbors)
                     {
-                        values.Add(entry.Key, entry.Value);
-                        _values.Remove(entry.Key);
+                        if (_routingTable.ContainsKey(successorRange))
+                        {
+                            id = _routingTable[successorRange];
+                            prx = _directNeighbors[id];
+                        }
+                    }
+                    if (prx != null)
+                    {
+                        if (prx.SrvPing() == 1)
+                            successorAlive = true;
+                    }
+                } catch (Exception) {
+                    Console.WriteLine("Excetion: Successor is dead");
+                }
+            }
+            
+            if (successorAlive || successorRange == null)
+            {
+                lock (_currentRange)
+                {
+                    int rangeSize = _currentRange.endRange - _currentRange.startRange;
+                    if (rangeSize <= 0)
+                    {
+                        newRange.startRange = 0;
+                        newRange.endRange = 0;
+                        response.keysRange = newRange;
+                        return response;
+                    }
+                        
+                    newRange.startRange = _currentRange.startRange + rangeSize / 2;
+                    newRange.endRange = _currentRange.endRange;
+                    _currentRange.endRange = newRange.startRange - 1;
+                }
+                Console.WriteLine("Zarejestrowano nowy wezel. range({0}, {1})",
+                                  newRange.startRange, newRange.endRange);
+                Console.WriteLine("Obecny lokalny range ({0}, {1})",
+                                  _currentRange.startRange, _currentRange.endRange);
+               
+                //proxy do wezla, ktory stanie sie bezposrednim nastepnikiem
+                lock (_directNeighbors)
+                {
+                    _directNeighbors.Add(nodeId, proxy);
+                    _routingTable.Add(newRange, nodeId);
+                }
+                
+                //Oddajemy wartosci do rejestrujacego sie wezla
+                lock (_values)
+                {
+                    foreach (KeyValuePair<int, string> entry in _values)
+                    {
+                        if (inRange(newRange, entry.Key))
+                        {
+                            values.Add(entry.Key, entry.Value);
+                            _values.Remove(entry.Key);
+                        }
                     }
                 }
+                response.keysRange = newRange;
+                response.values = _values;
             }
-            response.keysRange = newRange;
-            response.values = _values;
-            
+            else if (!successorAlive)
+            {
+                try
+                {
+                    lock (_directNeighbors)
+                    {
+                        int id = _routingTable[successorRange];
+                        _routingTable.Remove(successorRange);
+                        _directNeighbors.Remove(id);
+                        _directNeighbors.Add(nodeId, proxy);
+                        _routingTable.Add(successorRange, nodeId);
+                    }
+                } catch (Exception) {
+                    Console.WriteLine("Exception: Problem podczas dodawania nowego wezla");
+                }
+            }
             
             return response;
         }
