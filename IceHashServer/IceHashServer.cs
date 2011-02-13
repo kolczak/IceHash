@@ -113,7 +113,7 @@ namespace IceHashServer
                 {
                     //pierwszy wezel
                 }
-                
+                srvHashModule.SetInitialized(true);
                 ic.waitForShutdown();
             } catch (System.Exception ex) {
                 Console.WriteLine(ex);   

@@ -76,13 +76,13 @@ namespace IceHashRegistry
                     for (int i = 0; i < steps; i++)
                     {
                         int id = i * step;
-                        bool not_exists;
+                        bool exists;
                         lock (_ids)
                         {
-                            not_exists = !(_ids.ContainsKey(id)) || !((bool)_ids[id]);
+                            exists = _ids.ContainsKey(id) && ((bool)_ids[id]);
                         }
                         
-                        if (not_exists)
+                        if (!exists)
                         {
                             lock (_ids)
                             {
@@ -110,7 +110,7 @@ namespace IceHashRegistry
                                 }
                                 Ice.ObjectPrx hashObj = _ic.stringToProxy (@"IceHash:" + tmpEndpoint);
                                 HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
-                                if (hashModule.SrvPing() != 1)
+                                if (hashModule.SrvPing() != PingStatus.Ready)
                                     throw new Exception("Server ping error");
                             } catch (Exception) {
                                 Console.WriteLine("Node {0} is dead", id);
@@ -127,6 +127,7 @@ namespace IceHashRegistry
                                     }
                                     _endpoints.Add(id, endpoint);
                                 }
+                                return id;
                             }
                         }
                     }

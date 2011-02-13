@@ -10,6 +10,8 @@ module HashModule {
 
 	enum Status { Correct, Exists, Error, NotExist };
 
+	enum PingStatus { Ready, UnInitialized };
+
 	dictionary<int, string> ValuesDictionary; 
 
 	class RegisterResponse {
@@ -24,7 +26,7 @@ module HashModule {
 		RegisterResponse SrvRegister(int nodeId, Hash *proxy);
 		Range SrvGetRange();
 		int SrvGetNodeId();
-		int SrvPing();
+		PingStatus SrvPing();
 		//Connector SrvLookup(int key);
 		Hash *SrvLookup(int key); //returns service name
 		string SrvGet(int key);

@@ -23,7 +23,7 @@ namespace IceHashServer
                 
                 if (hashModule != null)
                 {
-                    if(hashModule.SrvPing() == 1)
+                    if(hashModule.SrvPing() == PingStatus.Ready)
                     {
                         Console.WriteLine("Server is Alive!");
                         Console.WriteLine("id servera: " + hashModule.SrvGetNodeId());
