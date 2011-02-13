@@ -20,6 +20,7 @@ namespace IceHashRegistry
             {
                 ic = Ice.Util.initialize(ref args);
                 _registry = new HashRegistryImpl();
+                _registry.SetCommunicator(ic);
                 _adapter = ic.createObjectAdapterWithEndpoints("HashRegistry", args[0]);
                 _adapter.add(_registry, ic.stringToIdentity("HashRegistry"));
                 _adapter.activate();

@@ -203,7 +203,11 @@ namespace IceHashServer
                 HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
                     return Status.Error;
-                result = proxy.Push(key, val);
+                try {
+                    result = proxy.Push(key, val);
+                } catch (Exception) {
+                    return Status.Error;
+                }
             }
             return result;
         }
@@ -228,7 +232,11 @@ namespace IceHashServer
                 HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
                     return "ERROR";
-                result = proxy.Get(key);
+                try {
+                    result = proxy.Get(key);
+                } catch (Exception) {
+                    return "ERROR";
+                }
             }
             
             return result;
@@ -245,8 +253,13 @@ namespace IceHashServer
             
             if (res)
             {
-                lock(_values)
-                    _values.Remove(key);
+                try {
+                    lock(_values)
+                        _values.Remove(key);
+                } catch (Exception) {
+                    Console.WriteLine("Wartosc dla podanego klucza nie istnieje");
+                    return Status.Error;
+                }
                 return Status.Correct;
             }
             else
@@ -254,7 +267,12 @@ namespace IceHashServer
                 HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
                     return Status.Error;
-                return proxy.Delete(key);
+                
+                try {
+                    return proxy.Delete(key);
+                } catch (Exception) {
+                    return Status.Error;
+                }
             }
         }
         
@@ -298,7 +316,7 @@ namespace IceHashServer
                 int id;
                 HashPrx prx = null;
                 try
-                {      
+                {
                     lock (_directNeighbors)
                     {
                         if (_routingTable.ContainsKey(successorRange))
@@ -355,7 +373,7 @@ namespace IceHashServer
                     }
                 }
                 response.keysRange = newRange;
-                response.values = _values;
+                response.values = values;
             }
             else if (!successorAlive)
             {
@@ -368,9 +386,14 @@ namespace IceHashServer
                         _directNeighbors.Remove(id);
                         _directNeighbors.Add(nodeId, proxy);
                         _routingTable.Add(successorRange, nodeId);
+                        
+                        
+                        response.keysRange = successorRange;
+                        response.values = values;
                     }
                 } catch (Exception) {
                     Console.WriteLine("Exception: Problem podczas dodawania nowego wezla");
+                    return null;
                 }
             }
             

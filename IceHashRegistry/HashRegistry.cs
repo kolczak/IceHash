@@ -17,6 +17,7 @@ namespace IceHashRegistry
         //private Thread _clientThread;
         private SortedList<int, bool> _ids;
         private int _currLevel;
+        private Ice.Communicator _ic;
        
         private const int MAX_ID = 1024;
         private const int MAX_LEVELS = 10;
@@ -31,6 +32,11 @@ namespace IceHashRegistry
             //_clientThread.Start();
             _ids = new SortedList<int, bool>();
             _currLevel = 0;
+        }
+        
+        public void SetCommunicator(Ice.Communicator ic)
+        {
+            _ic = ic;
         }
         
         public override void register (string name, HashPrx proxy, Ice.Current current__)
@@ -92,6 +98,36 @@ namespace IceHashRegistry
                                 _endpoints.Add(id, endpoint);
                             }
                             return id;
+                        }
+                        else  // jezeli istnieje w tablicy, ale wezel upadl
+                        {
+                            try
+                            {
+                                string tmpEndpoint;
+                                lock (_endpoints)
+                                {
+                                    tmpEndpoint = _endpoints[id];
+                                }
+                                Ice.ObjectPrx hashObj = _ic.stringToProxy (@"IceHash:" + tmpEndpoint);
+                                HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+                                if (hashModule.SrvPing() != 1)
+                                    throw new Exception("Server ping error");
+                            } catch (Exception) {
+                                Console.WriteLine("Node {0} is dead", id);
+                                lock (_ids)
+                                {
+                                    _ids[id] = true;
+                                }
+                                
+                                lock (_endpoints)
+                                {
+                                    if (_endpoints.ContainsKey(id))
+                                    {
+                                        _endpoints.Remove(id);
+                                    }
+                                    _endpoints.Add(id, endpoint);
+                                }
+                            }
                         }
                     }
                     
