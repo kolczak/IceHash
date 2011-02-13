@@ -14,8 +14,8 @@ namespace IceHashRegistry
         private List<string> _hashServiceNames;
         private Dictionary<int, HashPrx> _hashServices;
         private Dictionary<int, string> _endpoints;
-        private Thread _clientThread;
-        private SortedList _ids;
+        //private Thread _clientThread;
+        private SortedList<int, bool> _ids;
         private int _currLevel;
        
         private const int MAX_ID = 1024;
@@ -29,7 +29,7 @@ namespace IceHashRegistry
             _pingerRunning = true;
             //_clientThread = new Thread(new ThreadStart(this.pingerThread));
             //_clientThread.Start();
-            _ids = new SortedList();
+            _ids = new SortedList<int, bool>();
             _currLevel = 0;
         }
         
@@ -46,7 +46,6 @@ namespace IceHashRegistry
         
         public override int getHashId (string endpoint, Ice.Current current__)
         {
-            string stringId;
             int step, steps;
             
             lock(this)
@@ -83,7 +82,6 @@ namespace IceHashRegistry
                             {
                                 _ids[id] = true;
                             }
-                            stringId = id.ToString();
                             Console.WriteLine("Zarejestrowalem endpoint dla wezla {0}: {1}", id.ToString(), endpoint);
                             lock (_endpoints)
                             {
@@ -106,7 +104,7 @@ namespace IceHashRegistry
         public override NodeInfo[] getIceHashNodesInfo (int id, int count, Ice.Current current__)
         {
             double step;
-            int idx;
+            int idx, offset;
             NodeInfo []nodes;
             List<int> tmpList = new List<int>();
             
@@ -115,54 +113,47 @@ namespace IceHashRegistry
             
             lock (_ids)
             {
-                foreach (DictionaryEntry de in _ids)
+                foreach (KeyValuePair<int, bool> de in _ids)
                 {
                     if ((bool)de.Value)
                     {
-                        tmpList.Add((int)de.Key);
+                        tmpList.Add(de.Key);
                     }
                 }
             }
             
-            /*
-            lock (_hashServiceNames)
-            {
-                tmpList.AddRange(_hashServiceNames);
-            }
-            */
-            
-            Console.WriteLine("Get Icehashnodesinfo");
-            
             count += 1;
             if (count > tmpList.Count - 1)
             {
-                count = _hashServiceNames.Count;
+                count = tmpList.Count - 1;
             }
             
             idx = tmpList.IndexOf(id);
             nodes = new NodeInfo[count];
-            //nodes[0].id = 
+            for (int i = 0; i < count; i++)
+                nodes[i] = new NodeInfo();
             if (idx == 0)
                 nodes[0].id = tmpList[tmpList.Count - 1];
             else
                 nodes[0].id = tmpList[idx - 1];
             nodes[0].endpoint = _endpoints[nodes[0].id];
             nodes[0].type = NodeType.Predecessor;
+            offset = idx;
             idx = 1;
-            step = Math.Pow(tmpList.Count, (double)1/(double)(count - 2));
+            step = Math.Pow(tmpList.Count, (double)1/(double)(count - 1));
             for (int i = 1; i < count; i++)
             {
                 idx = (int)(idx * step);
-                nodes[i].id = tmpList[idx % tmpList.Count];
+                nodes[i].id = tmpList[(idx + offset) % tmpList.Count];
                 nodes[i].endpoint = _endpoints[nodes[i].id];
                 nodes[i].type = NodeType.Successor;
             }
-            
             return nodes;
         }
         
         public override int getIceHashNodesCount (Ice.Current current__)
         {
+            Console.WriteLine("get count");
             lock(_endpoints)
             {
                 Console.WriteLine("count: {0}", _endpoints.Count);

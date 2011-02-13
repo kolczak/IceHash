@@ -8,6 +8,19 @@ using HashModule;
 
 namespace IceHashServer
 {
+    public class RangeComparator : IComparer<Range>
+    {
+        public int Compare (Range x, Range y)
+        {
+            if (x.startRange.CompareTo(y.startRange) != 0)
+                return x.startRange.CompareTo(y.startRange);
+            if (x.endRange.CompareTo(y.endRange) != 0)
+                return x.endRange.CompareTo(y.endRange);
+            
+            return 0;
+        }
+    }
+    
     public class HashModuleImpl : HashDisp_
     {
         protected Range _currentRange;
@@ -21,7 +34,7 @@ namespace IceHashServer
         {
             _currentRange = new Range(0, Int32.MaxValue);
             _values = new Dictionary<int, string>();
-            _routingTable = new SortedDictionary<Range, int>();
+            _routingTable = new SortedDictionary<Range, int>(new RangeComparator());
             _directNeighbors = new Dictionary<int, HashPrx>();
             _predecessor = null;
         }
@@ -62,8 +75,16 @@ namespace IceHashServer
         
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
         {
-            _directNeighbors.Add(id, hashPrx);
-            _routingTable.Add(hashPrx.SrvGetRange(), id);
+            if (!_directNeighbors.ContainsKey(id))
+            {
+                _directNeighbors.Add(id, hashPrx);
+                _routingTable.Add(hashPrx.SrvGetRange(), id);
+            }
+            
+            foreach (KeyValuePair<Range, int> kvp in _routingTable)
+            {
+                 Console.WriteLine("Range: <{0}; {1}>", kvp.Key.startRange, kvp.Key.endRange);
+            }
         }
         
         protected HashPrx getClientObject(Ice.Communicator communicator, string proxyName)
@@ -91,16 +112,48 @@ namespace IceHashServer
         #region implemented abstract members of HashModule.HashDisp_
         public override Status Push (int key, string val, Ice.Current current__)
         {
-            if (inRange(_currentRange, key))
+            bool res;
+            
+            lock (_currentRange)
+            {
+                res = inRange(_currentRange, key);
+            }
+            
+            if (res)
             {
                 if (_values.ContainsKey(key))
                     _values.Remove(key);
+                Console.WriteLine("Pushing localy key: {0} value:{1}", key, val);
                 _values.Add(key, val);
                 return Status.Correct;
             }
             else
             {
-                return SrvLookup(key).Push(key, val);
+                //return SrvLookup(key).Push(key, val);
+                HashPrx proxy = null;
+                proxy = SrvLookup(key);
+                if (proxy == null)
+                {
+                    return Status.Error;
+                }
+                
+                Range range = proxy.SrvGetRange();
+                Console.WriteLine("Range: <{0}; {1}>", range.startRange, range.endRange);
+                
+                if (!inRange(range, key))
+                {
+                    proxy = proxy.SrvLookup(key);
+                }
+                
+                if (proxy != null)
+                {
+                    proxy.Push(key, val);
+                    return Status.Correct;
+                }
+                else
+                {
+                    return Status.Error;
+                }
             }
         }
         
@@ -108,15 +161,24 @@ namespace IceHashServer
         public override string Get (int key, Ice.Current current__)
         {
             string result = "";
+            bool res;
             
-            if (inRange(_currentRange, key))
+            lock (_currentRange)
+            {
+                res = inRange(_currentRange, key);
+            }
+            
+            if (res)
             {
                 if (_values.ContainsKey(key))
                     result = _values[key];
             }
             else
             {
-                result = SrvLookup(key).Get(key);
+                HashPrx proxy = SrvLookup(key);
+                if (proxy == null)
+                    return "ERROR";
+                result = proxy.Get(key);
             }
             
             return result;
@@ -132,24 +194,35 @@ namespace IceHashServer
             }
             else
             {
-                return SrvLookup(key).Delete(key);
+                HashPrx proxy = SrvLookup(key);
+                if (proxy == null)
+                    return Status.Error;
+                return proxy.Delete(key);
             }
         }
         
-        public override RegisterResponse SrvRegister (int nodeId, Ice.Current current__)
+        public override RegisterResponse SrvRegister (int nodeId, HashPrx proxy, Ice.Current current__)
         {
             RegisterResponse response = new RegisterResponse();
             Dictionary<int, string> values;
             Range newRange = new Range();
             
             values = new Dictionary<int, string>();
-            
             /*
-            HashPrx proxy = getClientObject(_communicator, "IIceHashService" + nodeId.ToString());            
-            if (proxy != null)
+            Ice.ObjectPrx hashObj;
+            hashObj = _communicator.stringToProxy (@"IceHash:" + endpoint);
+            if (hashObj == null)
             {
-                
+                Console.WriteLine("IceHash proxy with endpoint {0} is null", endpoint);
+                return response;
             }
+            HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+            if(hashModule == null)
+            {
+                Console.WriteLine("Invalid proxy");
+                return response;
+            }
+            AddDirectNeighbors(nodeId, hashModule);
             */
             
             lock (_currentRange)
@@ -165,9 +238,13 @@ namespace IceHashServer
                     
                 newRange.startRange = _currentRange.startRange + rangeSize / 2;
                 newRange.endRange = _currentRange.endRange;
+                _currentRange.endRange = newRange.startRange - 1;
             }
             Console.WriteLine("Zarejestrowano nowy wezel. range({0}, {1})",
                               newRange.startRange, newRange.endRange);
+           
+            _directNeighbors.Add(nodeId, proxy);
+            _routingTable.Add(newRange, nodeId);
             lock (_values)
             {
                 foreach (KeyValuePair<int, string> entry in _values)
@@ -181,6 +258,7 @@ namespace IceHashServer
             }
             response.keysRange = newRange;
             response.values = _values;
+            
             
             return response;
         }
@@ -223,6 +301,10 @@ namespace IceHashServer
                     else
                         //przeslij do ostatniego na liscie
                         getLast = true;
+                }
+                else
+                {
+                    getLast = true;
                 }
                 prevVal = kvp.Value;
             }

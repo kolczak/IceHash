@@ -21,7 +21,7 @@ module HashModule {
 		Status Push(int key, string value);
 		string Get(int key);
 		Status Delete(int key);
-		RegisterResponse SrvRegister(int nodeId);
+		RegisterResponse SrvRegister(int nodeId, Hash *proxy);
 		Range SrvGetRange();
 		int SrvGetNodeId();
 		int SrvPing();

@@ -65,20 +65,16 @@ namespace IceHashServer
                 _adapter = ic.createObjectAdapterWithEndpoints("IceHash", endpoint);
                 _adapter.add(srvHashModule, ic.stringToIdentity("IceHash"));
                 _adapter.activate();
-                Console.WriteLine("Wystartowalen IceHash");
-                ic.waitForShutdown();
-                
                 _adapter.activate();
                 Console.WriteLine("Wystartowalem serwer " + _hashNodeId);
                 
                 //sleep
                 //Thread.Sleep(5 * 1000);
                 
-                Ice.ObjectPrx hashObj;
                 //poproś o ileś nazw innych węzłów żeby pobrać dane
                 int count = registryModule.getIceHashNodesCount();
-                
                 NodeInfo[] nodesInfo = registryModule.getIceHashNodesInfo(_hashNodeId, (int)((double)count * 0.5));
+                Ice.ObjectPrx hashObj;
                 if (nodesInfo.Length > 0)
                 {
                     foreach(NodeInfo node in nodesInfo)
@@ -97,11 +93,14 @@ namespace IceHashServer
                         }
                         if (node.type == NodeType.Predecessor)
                             srvHashModule.SetPredecessor(hashModule);
-                        srvHashModule.AddDirectNeighbors(node.id, hashModule);
+                        else if (node.id != _hashNodeId)
+                            srvHashModule.AddDirectNeighbors(node.id, hashModule);
                     }
                 
+                    HashPrx local = HashPrxHelper.uncheckedCast(ic.stringToProxy(@"IceHash:" + endpoint));
+                    
                     HashPrx predecessor = srvHashModule.GetPredecessor();
-                    RegisterResponse response = predecessor.SrvRegister(_hashNodeId);
+                    RegisterResponse response = predecessor.SrvRegister(_hashNodeId, local);
                     srvHashModule.SetValues(response.values);
                     srvHashModule.SetRange(response.keysRange);
                 }
@@ -110,6 +109,7 @@ namespace IceHashServer
                     //pierwszy wezel
                 }
                 
+                ic.waitForShutdown();
             } catch (System.Exception ex) {
                 Console.WriteLine(ex);   
             }
