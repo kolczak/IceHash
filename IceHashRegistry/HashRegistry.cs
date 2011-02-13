@@ -140,10 +140,17 @@ namespace IceHashRegistry
             nodes[0].type = NodeType.Predecessor;
             offset = idx;
             idx = 1;
+            double dIdx = 1.0;
             step = Math.Pow(tmpList.Count, (double)1/(double)(count - 1));
             for (int i = 1; i < count; i++)
             {
-                idx = (int)(idx * step);
+                dIdx = dIdx * step;
+                if (dIdx - idx < 1)
+                {
+                    dIdx = idx + 1;
+                }
+                idx = (int)dIdx;
+                //Console.WriteLine("Zwracam {0} (idx+offset {1}) ((idx+offset) % tmpList.Count: {2})  | step {3}", idx, idx + offset, (idx + offset) % tmpList.Count, step);
                 nodes[i].id = tmpList[(idx + offset) % tmpList.Count];
                 nodes[i].endpoint = _endpoints[nodes[i].id];
                 nodes[i].type = NodeType.Successor;

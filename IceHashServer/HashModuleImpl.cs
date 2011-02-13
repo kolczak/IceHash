@@ -75,15 +75,17 @@ namespace IceHashServer
         
         public void AddDirectNeighbors(int id, HashPrx hashPrx)
         {
+            Console.WriteLine("Dodaje proxy i range dla node {0}", id);
             if (!_directNeighbors.ContainsKey(id))
             {
                 _directNeighbors.Add(id, hashPrx);
                 _routingTable.Add(hashPrx.SrvGetRange(), id);
             }
             
+            Console.WriteLine("Pelna tablica routing'u:");
             foreach (KeyValuePair<Range, int> kvp in _routingTable)
             {
-                 Console.WriteLine("Range: <{0}; {1}>", kvp.Key.startRange, kvp.Key.endRange);
+                 Console.WriteLine("\t<{0}; {1}>   nodeId {2}", kvp.Key.startRange, kvp.Key.endRange, kvp.Value);
             }
         }
         
@@ -242,6 +244,8 @@ namespace IceHashServer
             }
             Console.WriteLine("Zarejestrowano nowy wezel. range({0}, {1})",
                               newRange.startRange, newRange.endRange);
+            Console.WriteLine("Obecny lokalny range ({0}, {1})",
+                              _currentRange.startRange, _currentRange.endRange);
            
             _directNeighbors.Add(nodeId, proxy);
             _routingTable.Add(newRange, nodeId);
