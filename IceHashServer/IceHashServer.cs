@@ -21,7 +21,6 @@ namespace IceHashServer
         public override int run(string []args)
         {
             HashModuleImpl srvHashModule = new HashModuleImpl();
-            
             try
             {
                 string endpoint = args[0];
@@ -65,8 +64,9 @@ namespace IceHashServer
                 _adapter = ic.createObjectAdapterWithEndpoints("IceHash", endpoint);
                 _adapter.add(srvHashModule, ic.stringToIdentity("IceHash"));
                 _adapter.activate();
-                _adapter.activate();
                 Console.WriteLine("Wystartowalem serwer " + _hashNodeId);
+                HashPrx local = HashPrxHelper.uncheckedCast(ic.stringToProxy(@"IceHash:" + endpoint));
+                srvHashModule.SetOwnProxy(local);
                 
                 //sleep
                 //Thread.Sleep(5 * 1000);
@@ -95,7 +95,6 @@ namespace IceHashServer
                         if (node.type == NodeType.Predecessor)
                         {
                             srvHashModule.SetPredecessor(hashModule);   
-                            HashPrx local = HashPrxHelper.uncheckedCast(ic.stringToProxy(@"IceHash:" + endpoint));
                             HashPrx predecessor = srvHashModule.GetPredecessor();
                             RegisterResponse response = predecessor.SrvRegister(_hashNodeId, local);
                             srvHashModule.SetValues(response.values);
