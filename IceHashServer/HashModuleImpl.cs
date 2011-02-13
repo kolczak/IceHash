@@ -77,18 +77,20 @@ namespace IceHashServer
                             failerRagne = kvp.Key;
                     
                     //usun dane o nim
-                    _routingTable.Remove(failerRagne);
-                    _directNeighbors.Remove(failerId);
+                    lock(_directNeighbors)
+                    {
+                        _routingTable.Remove(failerRagne);
+                        _directNeighbors.Remove(failerId);
+                    }
                     
                     //polaczenie zakresow stworzy spojny zakres to przejmij jego pule
                     if((_currentRange.endRange + 1) == failerRagne.startRange)
                         _currentRange.endRange = failerRagne.endRange;
+                    
                     return Status.Correct;
                 }
-                else {
-                    return Status.Error;
-                }
             }
+            return Status.Error;
         }
         
         public int ID
@@ -161,6 +163,7 @@ namespace IceHashServer
         public override Status Push (int key, string val, Ice.Current current__)
         {
             bool res;
+            Status result;
             
             lock (_currentRange)
             {
@@ -177,32 +180,12 @@ namespace IceHashServer
             }
             else
             {
-                //return SrvLookup(key).Push(key, val);
-                HashPrx proxy = null;
-                proxy = SrvLookup(key);
+                HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
-                {
                     return Status.Error;
-                }
-                
-                Range range = proxy.SrvGetRange();
-                Console.WriteLine("Range: <{0}; {1}>", range.startRange, range.endRange);
-                
-                if (!inRange(range, key))
-                {
-                    proxy = proxy.SrvLookup(key);
-                }
-                
-                if (proxy != null)
-                {
-                    proxy.Push(key, val);
-                    return Status.Correct;
-                }
-                else
-                {
-                    return Status.Error;
-                }
+                result = proxy.Push(key, val);
             }
+            return result;
         }
         
         
@@ -226,14 +209,7 @@ namespace IceHashServer
                 HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
                     return "ERROR";
-                try{
-                    result = proxy.Get(key);
-                }catch(System.Exception ex){    //węzeł padł
-                    if(FailureDetected(proxy) == Status.Correct)
-                        return Get(key);    //sprobuj geta 
-                    else
-                        return "ERROR";
-                }
+                result = proxy.Get(key);
             }
             
             return result;
@@ -242,9 +218,17 @@ namespace IceHashServer
         
         public override Status Delete (int key, Ice.Current current__)
         {
-            if (inRange(_currentRange, key))
+            bool res;
+            
+            lock (_currentRange)
             {
-                _values.Remove(key);
+                res = inRange(_currentRange, key);
+            }
+            
+            if (res)
+            {
+                lock(_values)
+                    _values.Remove(key);
                 return Status.Correct;
             }
             else
@@ -335,8 +319,7 @@ namespace IceHashServer
         {
             return _currentRange;
         }
-        
-        
+                
         public override HashPrx SrvLookup (int key, Ice.Current current__)
         {
             int prevVal = -1;
@@ -344,18 +327,39 @@ namespace IceHashServer
             
             Console.WriteLine("Wywolano metode lookup dla klucza {0}", key);
             
+            if(inRange(_currentRange, key)) //jezeli po zmodyfikowaniu tablic okazuje sie ze przedzial mamy lokalnie
+                return _ownProxy;
+            
             foreach (KeyValuePair<Range, int> kvp in _routingTable)
             {
                 if(inRange(kvp.Key, key))
                 {
-                    return _directNeighbors[kvp.Value];
+                    try{
+                        if(inRange(_directNeighbors[kvp.Value].SrvGetRange(), key))
+                            return _directNeighbors[kvp.Value];
+                        else
+                            return _directNeighbors[kvp.Value].SrvLookup(key);
+                    }catch(System.Exception ex){ //wezel padl
+                        if(FailureDetected(_directNeighbors[kvp.Value]) == Status.Correct)
+                            return SrvLookup(key);    //sprobuj na zmodyfikownych tablicach routingu i sasiadow
+                        else
+                            return null;
+                    }
                 }
                 else if (kvp.Key.startRange > key)  //jezeli poczatkowe klucze w tablicy routingu sa juz 
                                                     //wieksze od poszukiwanego
                 {
-                    if(prevVal != -1)
-                        return _directNeighbors[prevVal];
-                    else
+                    if((prevVal != -1) && (getLast == false))
+                    {
+                        try{
+                            return _directNeighbors[prevVal].SrvLookup(key);
+                        }catch(System.Exception ex){    //wezel padl
+                            if(FailureDetected(_directNeighbors[prevVal]) == Status.Correct)
+                                return SrvLookup(key);    //sprobuj na zmodyfikownych tablicach routingu i sasiadow
+                            else
+                                return null;
+                        }
+                    }else
                         //przeslij do ostatniego na liscie
                         getLast = true;
                 }
@@ -368,7 +372,16 @@ namespace IceHashServer
             
             //w prevVal jest teraz ostatni id określający wezeł z najwyższym przedziałem
             if(getLast)
-                return _directNeighbors[prevVal];
+            {
+                try{
+                    return _directNeighbors[prevVal].SrvLookup(key);
+                }catch(System.Exception ex){    //wezel padl
+                    if(FailureDetected(_directNeighbors[prevVal]) == Status.Correct)
+                        return SrvLookup(key);    //sprobuj na zmodyfikownych tablicach routingu i sasiadow
+                    else
+                        return null;
+                }
+            }
             
             return null;
         }
