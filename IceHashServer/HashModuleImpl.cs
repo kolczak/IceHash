@@ -39,6 +39,57 @@ namespace IceHashServer
             _predecessor = null;
         }
         
+        private bool inRange(Range r, int key)
+        {
+            if(r.startRange <= key && r.endRange >= key)
+                return true;
+            else
+                return false;
+        }
+        
+        private Range FindSuccessor()
+        {
+            foreach(KeyValuePair<Range, int> kvp in _routingTable)
+            {
+                if(kvp.Key.startRange == (_currentRange.startRange + 1))
+                    return kvp.Key;
+            }
+        }
+        
+        private Status FalitureDetected(HashPrx proxy)
+        {
+            if (_directNeighbors.ContainsValue(proxy))
+            {
+                //znajdz id odpowiadające posiadanemu proxy
+                int failerId = -1;
+                foreach(KeyValuePair<int, HashPrx> kvp in _directNeighbors)
+                {
+                    if(kvp.Value == proxy)
+                        failerId = kvp.Key;
+                }
+                if (failerId != -1)   //sprawdzamy czy znalazł dane proxy w liscie sasiadow
+                {
+                    //znajdz zakres padlego wezla
+                    Range failerRagne = null;
+                    foreach(KeyValuePair<Range, int> kvp in _routingTable)
+                        if(kvp.Value == failerId)
+                            failerRagne = kvp.Key;
+                    
+                    //usun dane o nim
+                    _routingTable.Remove(failerRagne);
+                    _directNeighbors.Remove(failerId);
+                    
+                    //polaczenie zakresow stworzy spojny zakres to przejmij jego pule
+                    if((_currentRange.endRange + 1) == failerRagne.startRange)
+                        _currentRange.endRange = failerRagne.endRange;
+                    return Status.Correct;
+                }
+                else {
+                    return Status.Error;
+                }
+            }
+        }
+        
         public int ID
         {
             get;
@@ -55,13 +106,7 @@ namespace IceHashServer
             _values = new Dictionary<int, string>(vals);
         }
         
-        private bool inRange(Range r, int key)
-        {
-            if(r.startRange <= key && r.endRange >= key)
-                return true;
-            else
-                return false;
-        }
+        
         
         public void SetPredecessor(HashPrx predecessor)
         {
@@ -178,7 +223,14 @@ namespace IceHashServer
                 HashPrx proxy = SrvLookup(key);
                 if (proxy == null)
                     return "ERROR";
-                result = proxy.Get(key);
+                try{
+                    result = proxy.Get(key);
+                }catch(System.Exception ex){    //węzeł padł
+                    if(FalitureDetected(proxy) == Status.Correct)
+                        return Get(key);    //sprobuj geta 
+                    else
+                        return "ERROR";
+                }
             }
             
             return result;
