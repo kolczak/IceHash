@@ -54,9 +54,10 @@ namespace IceHashServer
                 if(kvp.Key.startRange == (_currentRange.startRange + 1))
                     return kvp.Key;
             }
+            return null;
         }
         
-        private Status FalitureDetected(HashPrx proxy)
+        private Status FailureDetected(HashPrx proxy)
         {
             if (_directNeighbors.ContainsValue(proxy))
             {
@@ -228,7 +229,7 @@ namespace IceHashServer
                 try{
                     result = proxy.Get(key);
                 }catch(System.Exception ex){    //węzeł padł
-                    if(FalitureDetected(proxy) == Status.Correct)
+                    if(FailureDetected(proxy) == Status.Correct)
                         return Get(key);    //sprobuj geta 
                     else
                         return "ERROR";
