@@ -324,7 +324,7 @@ namespace IceHashServer
         private Range DivideRange()
         {
             Range newRange = new Range();
-            if(inRange(_currentRange, 0))
+            if(_currentRange.startRange > _currentRange.endRange)
             {
                 newRange.startRange = 0;
                 newRange.endRange = _currentRange.endRange;
@@ -418,9 +418,11 @@ namespace IceHashServer
                         if (inRange(newRange, entry.Key))
                         {
                             values.Add(entry.Key, entry.Value);
-                            _values.Remove(entry.Key);
+                            
                         }
                     }
+                    foreach (KeyValuePair<int, string> entry in values)
+                        _values.Remove(entry.Key);
                 }
                 response.keysRange = newRange;
                 response.values = values;

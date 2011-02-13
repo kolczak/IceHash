@@ -101,6 +101,7 @@ namespace IceHashServer
                             srvHashModule.SetRange(response.keysRange);
                             Console.WriteLine("Ustawiam lokalny range ({0}, {1})",
                             response.keysRange.startRange, response.keysRange.endRange);
+                            srvHashModule.AddDirectNeighbors(node.id, hashModule);
                         }
                         else if (node.id != _hashNodeId)
                         {
@@ -112,6 +113,21 @@ namespace IceHashServer
                 else
                 {
                     //pierwszy wezel
+                }
+                
+                if (srvHashModule.SrvGetRange().endRange == Int32.MaxValue)
+                {
+                    try
+                    {
+                        HashPrx prx = srvHashModule.SrvLookup(0);
+                        if (prx == null)
+                            Console.WriteLine("Lookup zwrocil null'a");
+                        int nodeId = prx.SrvGetNodeId();
+                        if (nodeId != _hashNodeId)
+                            srvHashModule.AddDirectNeighbors(prx.SrvGetNodeId(), prx);
+                    } catch (System.Exception) {
+                        Console.WriteLine("Nie udalo sie dodac wezla 0");
+                    }
                 }
                 srvHashModule.SetInitialized(true);
                 ic.waitForShutdown();
