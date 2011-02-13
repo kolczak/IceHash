@@ -49,10 +49,21 @@ namespace IceHashServer
         
         private bool inRange(Range r, int key)
         {
-            if(r.startRange <= key && r.endRange >= key)
-                return true;
-            else
-                return false;
+            if (r.startRange <= r.endRange)
+            {
+                if((r.startRange <= key) && (r.endRange >= key))
+                    return true;
+                else
+                    return false;
+            }
+            else if (r.startRange > r.endRange)
+            {
+                if((r.startRange <= key) || (r.endRange >= key))
+                    return true;
+                else
+                    return false;
+            }
+            return false;
         }
         
         public void SetInitialized(bool initialized)
@@ -103,8 +114,10 @@ namespace IceHashServer
                         _directNeighbors.Remove(failerId);
                     }
                     //polaczenie zakresow stworzy spojny zakres to przejmij jego pule
-                    if((_currentRange.endRange + 1) == failerRagne.startRange)
-                    {
+                    //uwzglednij przejscie przez 0s
+                    if(((_currentRange.endRange + 1) == failerRagne.startRange) ||
+                       		((_currentRange.endRange == Int32.MaxValue) && (failerRagne.startRange == 0)))
+					{
                         _currentRange.endRange = failerRagne.endRange;
                         Console.WriteLine("Lokalny range się zmienił");
                         Console.WriteLine("Obecny lokalny range ({0}, {1})",
@@ -159,8 +172,6 @@ namespace IceHashServer
         {
             _values = new Dictionary<int, string>(vals);
         }
-        
-        
         
         public void SetPredecessor(HashPrx predecessor)
         {
@@ -246,7 +257,6 @@ namespace IceHashServer
             return result;
         }
         
-        
         public override string Get (int key, Ice.Current current__)
         {
             string result = "";
@@ -276,7 +286,6 @@ namespace IceHashServer
             
             return result;
         }
-        
         
         public override Status Delete (int key, Ice.Current current__)
         {
@@ -312,13 +321,38 @@ namespace IceHashServer
             }
         }
         
+        private Range DivideRange()
+        {
+            Range newRange = new Range();
+            if(inRange(_currentRange, 0))
+            {
+                newRange.startRange = 0;
+                newRange.endRange = _currentRange.endRange;
+                _currentRange.endRange = Int32.MaxValue;
+            }
+            else
+            {
+                int rangeSize = _currentRange.endRange - _currentRange.startRange;
+                if (rangeSize <= 0)
+                {
+                    newRange.startRange = 0;
+                    newRange.endRange = 0;
+                }
+                    
+                newRange.startRange = _currentRange.startRange + rangeSize / 2;
+                newRange.endRange = _currentRange.endRange;
+                _currentRange.endRange = newRange.startRange - 1;
+            }
+            return newRange;
+        }
+        
         public override RegisterResponse SrvRegister (int nodeId, HashPrx proxy, Ice.Current current__)
         {
             bool successorAlive = false;
             RegisterResponse response = new RegisterResponse();
             Dictionary<int, string> values;
-            Range newRange = new Range();
-                        
+            Range newRange;
+            
             values = new Dictionary<int, string>();
             
             Range successorRange = FindSuccessor();
@@ -356,18 +390,13 @@ namespace IceHashServer
             {
                 lock (_currentRange)
                 {
-                    int rangeSize = _currentRange.endRange - _currentRange.startRange;
-                    if (rangeSize <= 0)
-                    {
-                        newRange.startRange = 0;
-                        newRange.endRange = 0;
-                        response.keysRange = newRange;
-                        return response;
-                    }
-                        
-                    newRange.startRange = _currentRange.startRange + rangeSize / 2;
-                    newRange.endRange = _currentRange.endRange;
-                    _currentRange.endRange = newRange.startRange - 1;
+                    newRange = DivideRange();
+                }
+                
+                if(newRange.startRange == newRange.endRange)
+                {
+                    response.keysRange = newRange;
+                    return response;
                 }
                 Console.WriteLine("Zarejestrowano nowy wezel ({0}). range({1}, {2})",
                                   nodeId, newRange.startRange, newRange.endRange);
@@ -510,7 +539,6 @@ namespace IceHashServer
             
             return null;
         }
-        
         
         public override string SrvGet (int key, Ice.Current current__)
         {

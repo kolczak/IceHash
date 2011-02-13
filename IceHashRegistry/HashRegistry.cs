@@ -50,6 +50,40 @@ namespace IceHashRegistry
             }
         }
         
+        public bool checkNodeIsAlive(int id)
+        {
+            try
+            {
+                string tmpEndpoint;
+                lock (_endpoints)
+                {
+                    tmpEndpoint = _endpoints[id];
+                }
+                Ice.ObjectPrx hashObj = _ic.stringToProxy (@"IceHash:" + tmpEndpoint);
+                HashPrx hashModule = HashPrxHelper.checkedCast(hashObj.ice_twoway());
+                if (hashModule.SrvPing() != PingStatus.Ready)
+                {
+                    throw new Exception("Server ping error");
+                }
+            } catch (Exception) {
+                Console.WriteLine("Node {0} is dead", id);
+                lock (_ids)
+                {
+                    _ids[id] = true;
+                }
+                
+                lock (_endpoints)
+                {
+                    if (_endpoints.ContainsKey(id))
+                    {
+                        _endpoints.Remove(id);
+                    }
+                }
+                return false;
+            }
+            return true;
+        }
+        
         public override int getHashId (string endpoint, Ice.Current current__)
         {
             int step, steps;
@@ -169,13 +203,31 @@ namespace IceHashRegistry
             nodes = new NodeInfo[count];
             for (int i = 0; i < count; i++)
                 nodes[i] = new NodeInfo();
-            if (idx == 0)
-                nodes[0].id = tmpList[tmpList.Count - 1];
-            else
-                nodes[0].id = tmpList[idx - 1];
+            
+            int j = 0;
+            while (j < tmpList.Count)
+            {
+                ++j;
+                if (idx == 0)
+                {
+                    if (tmpList.Count - j < 0)
+                        break;
+                    nodes[0].id = tmpList[tmpList.Count - j];
+                }
+                else
+                {
+                    if (idx - j < 0)
+                        break;
+                    nodes[0].id = tmpList[idx - j];
+                }
+                if (checkNodeIsAlive(nodes[0].id))
+                    break;
+            }
+            
             nodes[0].endpoint = _endpoints[nodes[0].id];
             nodes[0].type = NodeType.Predecessor;
             offset = idx;
+            
             idx = 1;
             double dIdx = 1.0;
             step = Math.Pow(tmpList.Count, (double)1/(double)(count - 1));
