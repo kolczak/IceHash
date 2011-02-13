@@ -76,7 +76,7 @@ namespace IceHashServer
                 NodeInfo[] nodesInfo = registryModule.getIceHashNodesInfo(_hashNodeId, (int)((double)count * 0.5));
                 Ice.ObjectPrx hashObj;
                 if (nodesInfo.Length > 0)
-                {
+                {   
                     foreach(NodeInfo node in nodesInfo)
                     {
                         hashObj = ic.stringToProxy (@"IceHash:" + node.endpoint);
@@ -91,18 +91,24 @@ namespace IceHashServer
                             Console.WriteLine("Invalid proxy");
                             return -2;
                         }
+                        Console.WriteLine("Utworzono proxy do IceHash:{0}", node.endpoint);
                         if (node.type == NodeType.Predecessor)
-                            srvHashModule.SetPredecessor(hashModule);
+                        {
+                            srvHashModule.SetPredecessor(hashModule);   
+                            HashPrx local = HashPrxHelper.uncheckedCast(ic.stringToProxy(@"IceHash:" + endpoint));
+                            HashPrx predecessor = srvHashModule.GetPredecessor();
+                            RegisterResponse response = predecessor.SrvRegister(_hashNodeId, local);
+                            srvHashModule.SetValues(response.values);
+                            srvHashModule.SetRange(response.keysRange);
+                            Console.WriteLine("Ustawiam lokalny range ({0}, {1})",
+                            response.keysRange.startRange, response.keysRange.endRange);
+                        }
                         else if (node.id != _hashNodeId)
+                        {
+                            Console.WriteLine("Dodaje hashProxy dla node {0}", node.id);
                             srvHashModule.AddDirectNeighbors(node.id, hashModule);
+                        }
                     }
-                
-                    HashPrx local = HashPrxHelper.uncheckedCast(ic.stringToProxy(@"IceHash:" + endpoint));
-                    
-                    HashPrx predecessor = srvHashModule.GetPredecessor();
-                    RegisterResponse response = predecessor.SrvRegister(_hashNodeId, local);
-                    srvHashModule.SetValues(response.values);
-                    srvHashModule.SetRange(response.keysRange);
                 }
                 else
                 {
